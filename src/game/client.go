@@ -9,6 +9,7 @@ type Client struct {
 	Id    int             // uniquely identifies the Client within the Lobby
 	Lobby *Lobby          // holds a reference to the Lobby that the client is in
 	ws    *websocket.Conn // holds a reference to the WebSocket connection
+	write chan Message    // a write channel used by the Lobby to pass messages that the client should transmit over the websocket
 }
 
 func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
@@ -20,13 +21,54 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 		return errors.New("client must belong to a lobby")
 	}
 
-	lobby.Join <- &Client{
+	client := &Client{
 		Id:    lobby.GetNextClientId(),
 		Lobby: lobby,
 		ws:    ws,
+		write: make(chan Message),
 	}
+
+	lobby.Join <- client
+	go client.Write()
+	go client.Read()
 
 	return nil
 }
 
-// todo: when the ws connection is severed, then broadcast the client to the lobby's Leave channel
+func (c *Client) Write() {
+	defer func() {
+		c.Lobby.Leave <- c
+		_ = c.ws.Close()
+	}()
+
+	for {
+		message, ok := <-c.write
+		if !ok {
+			_ = c.ws.WriteMessage(websocket.CloseMessage, []byte{})
+			return
+		}
+
+		err := c.ws.WriteJSON(message)
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (c *Client) Read() {
+	defer func() {
+		c.Lobby.Leave <- c
+		_ = c.ws.Close()
+	}()
+
+	for {
+		var message Message
+		err := c.ws.ReadJSON(&message)
+		if err != nil {
+			return
+		}
+
+		message.From = c.Id
+		c.Lobby.Broadcast <- message
+	}
+}

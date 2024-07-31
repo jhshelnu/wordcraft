@@ -21,9 +21,10 @@ var upgrader = websocket.Upgrader{
 }
 
 var lobbies = make(map[uuid.UUID]*game.Lobby)
+var lobbyEnded = make(chan uuid.UUID)
 
 func createLobby(c *gin.Context) {
-	lobby := game.NewLobby()
+	lobby := game.NewLobby(lobbyEnded)
 	go lobby.StartLobby()
 	lobbies[lobby.Id] = lobby
 	c.JSON(http.StatusCreated, gin.H{"lobbyId": lobby.Id})
@@ -81,7 +82,16 @@ func joinLobby(c *gin.Context) {
 	}
 }
 
+func handleEndedLobbies() {
+	for {
+		endedLobbyId := <-lobbyEnded
+		delete(lobbies, endedLobbyId)
+	}
+}
+
 func main() {
+	go handleEndedLobbies()
+
 	server := gin.Default()
 
 	// Static assets

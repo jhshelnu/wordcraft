@@ -5,13 +5,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let input = document.getElementById("send-text")
 
     ws.onmessage = ({ data }) => {
-        alert(data)
+        let message = JSON.parse(data)
+        alert(message.Content)
     }
 
     sendButton.addEventListener("click", () => {
         if (ws.readyState !== WebSocket.OPEN) {
             return
         }
-        ws.send(input.value)
+        ws.send(JSON.stringify({ content: input.value }))
     })
 })

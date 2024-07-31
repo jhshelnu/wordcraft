@@ -1,10 +1,6 @@
 package game
 
-import (
-	"github.com/google/uuid"
-)
-
 type Message struct {
-	From    uuid.UUID
-	Content string
+	From    int    // id of the User in the lobby
+	Content string // content of the message
 }
