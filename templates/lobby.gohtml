@@ -1,0 +1,15 @@
+<html lang="en">
+    <head>
+        <title>wordgame</title>
+        <script src="/static/lobby.js"></script>
+        <script>
+            const lobbyId = {{ .lobbyId }}
+        </script>
+    </head>
+    <body>
+        <h4>Lobby: {{ .lobbyId }}</h4>
+        <label for="send-text">Send through the websocket:</label>
+        <input type="text" id="send-text">
+        <button type="submit" id="send-button">Send</button>
+    </body>
+</html>

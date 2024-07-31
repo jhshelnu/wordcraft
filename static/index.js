@@ -1,14 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let ws = new WebSocket("wss://localhost:8080/ws/123")
+    let createLobby = document.getElementById("create-lobby")
 
-    let sendButton = document.getElementById("send-button")
-    let input = document.getElementById("send-text")
-
-    sendButton.addEventListener('click', () => {
-        if (ws.readyState === WebSocket.OPEN) {
-            console.log(`going to send: "${input.value}"`)
-            ws.send(input.value)
-            console.log('sent!')
+    createLobby.addEventListener("click", async () => {
+        let res = await fetch("/api/lobby", { method: "POST" })
+        if (!res.ok) {
+            alert("Failed to create lobby. See the console for details")
+            return
         }
+
+        let lobbyId = (await res.json())["lobbyId"]
+        if (!lobbyId) {
+            alert("Failed to create lobby.")
+            return
+        }
+
+        window.location.href = "/lobby/" + lobbyId
     })
 })
