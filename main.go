@@ -92,7 +92,8 @@ func handleEndedLobbies() {
 func main() {
 	go handleEndedLobbies()
 
-	server := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	server := gin.New()
 
 	// Static assets
 	server.Static("/static", "./static")
@@ -109,6 +110,7 @@ func main() {
 	// WebSocket
 	server.GET("/ws/:lobbyId", joinLobby)
 
+	log.Println("Starting server on port 8080")
 	err := server.Run(":8080")
 	if err != nil {
 		log.Fatalf("Failed to start application server: %v", err)
