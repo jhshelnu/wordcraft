@@ -3,7 +3,6 @@ package game
 import (
 	"errors"
 	"github.com/gorilla/websocket"
-	"strconv"
 )
 
 type Client struct {
@@ -29,7 +28,7 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 		write: make(chan Message),
 	}
 
-	_ = ws.WriteJSON(Message{Type: CLIENT_ID_ASSIGNED, Arg: strconv.Itoa(client.Id)})
+	_ = ws.WriteJSON(Message{Type: CLIENT_ID_ASSIGNED, Content: client.Id})
 
 	lobby.join <- client
 	go client.Write()
@@ -72,6 +71,6 @@ func (c *Client) Read() {
 		}
 
 		message.From = c.Id
-		c.Lobby.broadcast <- message
+		c.Lobby.read <- message
 	}
 }

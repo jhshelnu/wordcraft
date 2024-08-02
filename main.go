@@ -54,7 +54,13 @@ func openLobby(c *gin.Context) {
 		c.JSON(httpError.status, gin.H{"message": httpError.message})
 		return
 	}
-	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{"lobbyId": lobbyId})
+
+	lobby := lobbies[lobbyId]
+	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{
+		"lobbyId":    lobbyId,
+		"gameStatus": lobby.Status,
+		"clientIds":  lobby.GetClientIds(),
+	})
 }
 
 // once on the page for a specific lobby, the browser sends a request here to establish a WebSocket connection
