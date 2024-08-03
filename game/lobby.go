@@ -2,9 +2,11 @@ package game
 
 import (
 	"github.com/google/uuid"
+	"github.com/jhshelnu/wordgame/words"
 	"log"
 	"maps"
 	"slices"
+	"strings"
 	"sync"
 )
 
@@ -31,6 +33,8 @@ type Lobby struct {
 
 	Status      gameStatus // the Status of the game, indicates if its started, in progress, etc
 	clientsTurn int        // the id of the client whose turn it is (if applicable)
+
+	currentChallenge string // the current challenge string for clientsTurn
 }
 
 func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
@@ -92,10 +96,38 @@ func (lobby *Lobby) HandleMessage(message Message) {
 	log.Printf("[Lobby %s] In state %d, received message: %+v\n", lobby.Id, lobby.Status, message)
 	switch message.Type {
 	case START_GAME:
-		if lobby.Status == WAITING_FOR_PLAYERS {
-			lobby.Status = IN_PROGRESS
-			lobby.clientsTurn = 1
-			lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: "abc"}})
+		lobby.onStartGame()
+	case ANSWER_PREVIEW:
+		lobby.onAnswerPreview(message)
+	case SUBMIT_ANSWER:
+		lobby.onAnswerSubmitted(message)
+	}
+}
+
+func (lobby *Lobby) onStartGame() {
+	if lobby.Status == WAITING_FOR_PLAYERS {
+		lobby.Status = IN_PROGRESS
+		lobby.clientsTurn = 1
+		lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: "abc"}})
+	}
+}
+
+func (lobby *Lobby) onAnswerPreview(message Message) {
+	if lobby.Status == IN_PROGRESS && message.From == lobby.clientsTurn {
+		lobby.BroadcastMessage(message)
+	}
+}
+
+func (lobby *Lobby) onAnswerSubmitted(message Message) {
+	if lobby.Status == IN_PROGRESS && message.From == lobby.clientsTurn {
+		answer, ok := message.Content.(string)
+		if !ok {
+			return
+		}
+		if words.IsValidWord(answer) && strings.Contains(answer, lobby.currentChallenge) {
+			lobby.BroadcastMessage(Message{Type: ANSWER_ACCEPTED, Content: answer})
+		} else {
+			lobby.BroadcastMessage(Message{Type: ANSWER_REJECTED, Content: answer})
 		}
 	}
 }

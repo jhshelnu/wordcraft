@@ -12,19 +12,18 @@
 
         <button id="start-game-button" style="display: none">Start game!</button>
 
+        <p>Players:</p>
+        <ul id="clients-list">
+            {{range .clientIds}}
+                <li data-client-id="{{.}}">{{.}}</li>
+            {{end}}
+        </ul>
+
         <div id="challenge-input-section" style="display: none">
-            <label for="challenge-input">Your answer:</label>
-            <input type="text" id="challenge-input">
-            <button type="submit" id="send-button">Send</button>
+            <label for="answer-input">Make a word with <span id="challenge-text"></span>:</label>
+            <input type="text" id="answer-input">
+            <button type="submit" id="submit-answer">Submit answer</button>
         </div>
 
-        <div>
-            <p>Players:</p>
-            <ul id="clients-list">
-                {{range .clientIds}}
-                    <li data-client-id="{{.}}">{{.}}</li>
-                {{end}}
-            </ul>
-        </div>
     </body>
 </html>
