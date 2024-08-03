@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/jhshelnu/wordgame/game"
+	"github.com/jhshelnu/wordgame/words"
 	"log"
 	"net/http"
 )
@@ -96,6 +97,7 @@ func handleEndedLobbies() {
 }
 
 func main() {
+	words.Init()
 	go handleEndedLobbies()
 
 	gin.SetMode(gin.ReleaseMode)

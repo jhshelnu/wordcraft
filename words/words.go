@@ -1,12 +1,20 @@
 package words
 
 var words = make(map[string]bool)
+var challenges = make([]string, 0, 10)
 
-func Init() error {
+func Init() {
+	// init the words
 	words["cat"] = true
-	return nil
+
+	// init the challenges
+	challenges = append(challenges, "ca")
 }
 
 func IsValidWord(word string) bool {
 	return words[word]
+}
+
+func GetChallenge() string {
+	return challenges[0]
 }

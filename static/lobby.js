@@ -15,12 +15,14 @@ const WAITING_FOR_PLAYERS = 0
 const IN_PROGRESS         = 1
 const GAME_OVER           = 2
 
-let clientId;              // our assigned id for the lobby we're joining
-let clientsList;           // the <ul> element holding the list of players that are currently connected
-let startGameButton;
-let challengeInputSection; // the part of the page to get the user's input (only shown during their turn)
-let answerInput;
-let submitAnswerButton;
+let clientId              // our assigned id for the lobby we're joining
+let clientsList           // the <ul> element holding the list of players that are currently connected
+let startGameButton       // the button to start the game
+
+let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
+let challengeText         // the text displaying the current challenge to the user
+let answerInput           // the input element which holds what the user has typed so far
+let submitAnswerButton    // the button to submit the answer
 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
@@ -31,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
     submitAnswerButton = document.getElementById("submit-answer")
+    challengeText = document.getElementById("challenge-text")
 
     if (gameStatus === WAITING_FOR_PLAYERS) {
         startGameButton.style.display = "inline"
@@ -75,7 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
     })
 
-
     submitAnswerButton.addEventListener("click", () => {
         let input = answerInput.value
         if (ws.readyState !== WebSocket.OPEN || !input) {
@@ -103,7 +105,12 @@ function onClientsTurn(content) {
     let clientsTurn = content["ClientId"]
     let challenge = content["Challenge"]
 
-
-
-    // todo: un-hide the challenge input html, transmit answer
+    if (clientsTurn === clientId) {
+        // it's our turn
+        challengeText.textContent = challenge
+        challengeInputSection.style.display = "inline"
+    } else {
+        // it's not our turn
+        challengeInputSection.style.display = "none"
+    }
 }

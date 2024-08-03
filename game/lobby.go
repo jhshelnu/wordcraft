@@ -93,7 +93,6 @@ func (lobby *Lobby) HandleClientLeave(client *Client) {
 }
 
 func (lobby *Lobby) HandleMessage(message Message) {
-	log.Printf("[Lobby %s] In state %d, received message: %+v\n", lobby.Id, lobby.Status, message)
 	switch message.Type {
 	case START_GAME:
 		lobby.onStartGame()
@@ -108,7 +107,7 @@ func (lobby *Lobby) onStartGame() {
 	if lobby.Status == WAITING_FOR_PLAYERS {
 		lobby.Status = IN_PROGRESS
 		lobby.clientsTurn = 1
-		lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: "abc"}})
+		lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: words.GetChallenge()}})
 	}
 }
 
@@ -124,11 +123,15 @@ func (lobby *Lobby) onAnswerSubmitted(message Message) {
 		if !ok {
 			return
 		}
-		if words.IsValidWord(answer) && strings.Contains(answer, lobby.currentChallenge) {
-			lobby.BroadcastMessage(Message{Type: ANSWER_ACCEPTED, Content: answer})
-		} else {
+
+		if !words.IsValidWord(answer) || !strings.Contains(answer, lobby.currentChallenge) {
 			lobby.BroadcastMessage(Message{Type: ANSWER_REJECTED, Content: answer})
+			return
 		}
+
+		lobby.BroadcastMessage(Message{Type: ANSWER_ACCEPTED, Content: answer})
+		lobby.clientsTurn = (lobby.clientsTurn % len(lobby.clients)) + 1
+		lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: words.GetChallenge()}})
 	}
 }
 
