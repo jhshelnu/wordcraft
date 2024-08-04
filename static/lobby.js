@@ -75,7 +75,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     answerInput.addEventListener("change", () => {
         let currentInput = answerInput.value
-        ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
+        if (currentInput) {
+            ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
+        }
     })
 
     submitAnswerButton.addEventListener("click", () => {
@@ -108,6 +110,7 @@ function onClientsTurn(content) {
     if (clientsTurn === clientId) {
         // it's our turn
         challengeText.textContent = challenge
+        answerInput.value = ""
         challengeInputSection.style.display = "inline"
     } else {
         // it's not our turn

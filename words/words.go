@@ -1,14 +1,31 @@
 package words
 
-var words = make(map[string]bool)
-var challenges = make([]string, 0, 10)
+import (
+	"bufio"
+	"fmt"
+	"math/rand/v2"
+	"os"
+)
 
-func Init() {
-	// init the words
-	words["cat"] = true
+var words = make(map[string]bool, 370_104) // the number of words in word_list.txt
+var challenges = make([]string, 0)         // todo: allocate the appropriate capacity here once the challenges are determined
 
-	// init the challenges
-	challenges = append(challenges, "ca")
+func Init() error {
+	err := processFile("word_list.txt", func(word string) {
+		words[word] = true
+	})
+	if err != nil {
+		return err
+	}
+
+	err = processFile("challenge_list.txt", func(challenge string) {
+		challenges = append(challenges, challenge)
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func IsValidWord(word string) bool {
@@ -16,5 +33,20 @@ func IsValidWord(word string) bool {
 }
 
 func GetChallenge() string {
-	return challenges[0]
+	return challenges[rand.IntN(len(challenges))]
+}
+
+func processFile(fileName string, lineFn func(string)) error {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return fmt.Errorf("failed to process file %s: %w", fileName, err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lineFn(scanner.Text())
+	}
+
+	return nil
 }

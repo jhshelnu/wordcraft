@@ -46,7 +46,7 @@ func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
 		clients:     make(map[int]*Client),
 		lobbyOver:   lobbyOver,
 		Status:      WAITING_FOR_PLAYERS,
-		clientsTurn: 1,
+		clientsTurn: -1,
 	}
 }
 
@@ -106,8 +106,7 @@ func (lobby *Lobby) HandleMessage(message Message) {
 func (lobby *Lobby) onStartGame() {
 	if lobby.Status == WAITING_FOR_PLAYERS {
 		lobby.Status = IN_PROGRESS
-		lobby.clientsTurn = 1
-		lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: words.GetChallenge()}})
+		lobby.changeTurn()
 	}
 }
 
@@ -130,9 +129,30 @@ func (lobby *Lobby) onAnswerSubmitted(message Message) {
 		}
 
 		lobby.BroadcastMessage(Message{Type: ANSWER_ACCEPTED, Content: answer})
-		lobby.clientsTurn = (lobby.clientsTurn % len(lobby.clients)) + 1
-		lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: words.GetChallenge()}})
+		lobby.changeTurn()
 	}
+}
+
+func (lobby *Lobby) changeTurn() {
+	// this is definitely not the best way to do this,
+	// but it will work fine for the size of our lobbies.
+	// the complexity here arises from the fact that the clients in a lobby are not guaranteed to have consecutive ids or start at id 1.
+	// since clients can join and leave at any point, a lobby could have ids like the following: [3, 9, 80]
+	// the behavior in this case is to start with the lowest id first, then go up through the list, wrapping back around each time
+	clientIds := slices.Sorted(maps.Keys(lobby.clients))
+
+	if lobby.clientsTurn == -1 { // if it's the start of the game, choose the oldest client still connected
+		lobby.clientsTurn = clientIds[0]
+	} else { // otherwise, pick the next client going in order of id (wrapping around as necessary)
+		for i, id := range clientIds {
+			if id == lobby.clientsTurn {
+				lobby.clientsTurn = clientIds[(i+1)%len(lobby.clients)]
+				break
+			}
+		}
+	}
+
+	lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: words.GetChallenge()}})
 }
 
 func (lobby *Lobby) BroadcastMessage(message Message) {

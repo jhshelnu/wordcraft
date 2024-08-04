@@ -97,7 +97,10 @@ func handleEndedLobbies() {
 }
 
 func main() {
-	words.Init()
+	if err := words.Init(); err != nil {
+		log.Fatal(err)
+	}
+
 	go handleEndedLobbies()
 
 	gin.SetMode(gin.ReleaseMode)
@@ -119,8 +122,7 @@ func main() {
 	server.GET("/ws/:lobbyId", joinLobby)
 
 	log.Println("Starting server on port 8080")
-	err := server.Run(":8080")
-	if err != nil {
+	if err := server.Run(":8080"); err != nil {
 		log.Fatalf("Failed to start application server: %v", err)
 	}
 }
