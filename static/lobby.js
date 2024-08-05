@@ -16,7 +16,6 @@ const IN_PROGRESS         = 1
 const GAME_OVER           = 2
 
 let clientId              // our assigned id for the lobby we're joining
-let clientsList           // the <ul> element holding the list of players that are currently connected
 let startGameButton       // the button to start the game
 
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
@@ -28,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
     let ws = new WebSocket(`ws://localhost:8080/ws/${lobbyId}`)
 
-    clientsList = document.getElementById("clients-list")
     startGameButton = document.getElementById("start-game-button")
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
@@ -88,14 +86,11 @@ document.addEventListener("DOMContentLoaded", () => {
 })
 
 function onClientJoined(newClientId) {
-    let elem = document.createElement("li")
-    elem.setAttribute("data-client-id", newClientId)
-    elem.append(document.createTextNode(`Player ${newClientId}`))
-    clientsList.append(elem)
+    renderNewClientCard(newClientId)
 }
 
 function onClientLeft(leavingClientId) {
-    document.querySelector(`#clients-list li[data-client-id="${leavingClientId}"]`).remove()
+    document.querySelector(`#clients-list [data-client-id="${leavingClientId}"]`).remove()
 }
 
 function onClientsTurn(content) {
@@ -108,7 +103,7 @@ function onClientsTurn(content) {
     if (clientId === content["ClientId"]) {
         // it's our turn
         answerInput.value = ""
-        challengeInputSection.style.display = "inline"
+        challengeInputSection.style.display = "block"
     } else {
         // it's not our turn
         challengeInputSection.style.display = "none"

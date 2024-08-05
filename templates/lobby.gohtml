@@ -1,30 +1,50 @@
-<html lang="en" data-theme="synthwave">
+<html lang="en">
     <head>
         <title>wordgame</title>
         <script>
             const lobbyId = {{ .lobbyId }};
             let gameStatus = {{ .gameStatus }};
+
+            function renderNewClientCard(newClientId) {
+                let clientsList = document.getElementById("clients-list")
+                let template = document.createElement("template")
+                template.innerHTML = `
+                    <div data-client-id="${newClientId}" class="card card-compact bg-base-100 w-52 shadow-2xl">
+                        <figure class="pt-4">
+                            <img
+                                class="mask mask-circle"
+                                src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                                alt="Shoes" />
+                        </figure>
+                        <div class="card-body items-center">
+                            <h2 class="card-title">Player ${newClientId}</h2>
+                            <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center">
+                                <p data-current-guess class="font-bold" style="color: oklch(var(--sc))"></p>
+                            </div>
+                        </div>
+                    </div>
+                `
+                clientsList.appendChild(template.content)
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                {{range .clientIds}}
+                renderNewClientCard({{.}})
+                {{end}}
+            })
         </script>
         <script src="/static/lobby.js"></script>
-        <script src="https://cdn.tailwindcss.com"></script>
-
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css">
         <link rel="stylesheet" href="/static/main.css">
     </head>
-    <body>
+    <body class="flex flex-col items-center">
         <h2 id="status-text" class="h2 w-full text-center" style="display: none">Challenge: <span id="challenge-text"></span></h2>
-        <ul id="clients-list">
-            {{range .clientIds}}
-                <li data-client-id="{{.}}">Player {{.}}</li>
-            {{end}}
-        </ul>
+        <div id="clients-list" class="flex flex-row gap-4 mt-10"></div>
 
-        <div id="challenge-input-section" style="display: none">
-            <label for="answer-input">Your answer</label>
-            <input type="text" id="answer-input">
+        <div id="challenge-input-section" class="mt-14" style="display: none">
+            <label for="answer-input"></label>
+            <input id="answer-input" type="text" class="input input-accent w-50" />
         </div>
 
-        <button id="start-game-button" class="btn btn-accent" style="display: none">Start game!</button>
-
+        <button id="start-game-button" class="btn btn-accent w-36 text-lg mt-14" style="display: none">Start game!</button>
     </body>
 </html>
