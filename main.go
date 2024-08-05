@@ -103,7 +103,6 @@ func main() {
 
 	go handleEndedLobbies()
 
-	gin.SetMode(gin.ReleaseMode)
 	server := gin.New()
 
 	// Static assets
@@ -114,7 +113,7 @@ func main() {
 	apiGroup.POST("/lobby", createLobby)
 
 	// HTML
-	server.LoadHTMLGlob("templates/*")
+	server.LoadHTMLGlob("templates/*.gohtml")
 	server.GET("/", handleIndex)
 	server.GET("/lobby/:lobbyId", openLobby)
 

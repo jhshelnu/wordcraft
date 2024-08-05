@@ -22,7 +22,7 @@ let startGameButton       // the button to start the game
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let challengeText         // the text displaying the current challenge to the user
 let answerInput           // the input element which holds what the user has typed so far
-let submitAnswerButton    // the button to submit the answer
+let statusText            // large text at the top of the screen displaying the current challenge
 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
@@ -32,12 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
     startGameButton = document.getElementById("start-game-button")
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
-    submitAnswerButton = document.getElementById("submit-answer")
     challengeText = document.getElementById("challenge-text")
+    statusText = document.getElementById("status-text")
 
     if (gameStatus === WAITING_FOR_PLAYERS) {
         startGameButton.style.display = "inline"
-
     }
 
     startGameButton.addEventListener("click", () => {
@@ -80,19 +79,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     })
 
-    submitAnswerButton.addEventListener("click", () => {
+    answerInput.addEventListener('keyup', e => {
         let input = answerInput.value
-        if (ws.readyState !== WebSocket.OPEN || !input) {
-            return
+        if (e.key === 'Enter' && input) {
+            ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
         }
-        ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
     })
 })
 
 function onClientJoined(newClientId) {
     let elem = document.createElement("li")
     elem.setAttribute("data-client-id", newClientId)
-    elem.append(document.createTextNode(newClientId))
+    elem.append(document.createTextNode(`Player ${newClientId}`))
     clientsList.append(elem)
 }
 
@@ -104,12 +102,11 @@ function onClientsTurn(content) {
     gameStatus = IN_PROGRESS
     startGameButton.style.display = "none"
 
-    let clientsTurn = content["ClientId"]
-    let challenge = content["Challenge"]
+    challengeText.textContent = content["Challenge"]
+    statusText.style.display = "block"
 
-    if (clientsTurn === clientId) {
+    if (clientId === content["ClientId"]) {
         // it's our turn
-        challengeText.textContent = challenge
         answerInput.value = ""
         challengeInputSection.style.display = "inline"
     } else {
