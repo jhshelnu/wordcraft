@@ -16,8 +16,8 @@
                             alt="Shoes" />
                         <div class="card-body items-center">
                             <h2 class="card-title">Player ${newClientId}</h2>
-                            <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center">
-                                <p data-current-guess class="font-bold" style="color: oklch(var(--sc))"></p>
+                            <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center" style="visibility: hidden">
+                                <p data-current-guess class="font-bold px-3" style="color: oklch(var(--sc))"></p>
                             </div>
                         </div>
                     </div>
@@ -31,6 +31,7 @@
                 {{end}}
             })
         </script>
+        <script src="/static/thirdparty/gsap.min.js"></script>
         <script src="/static/lobby.js"></script>
         <link rel="stylesheet" href="/static/main.css">
     </head>

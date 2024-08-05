@@ -34,7 +34,8 @@ type Lobby struct {
 	Status      gameStatus // the Status of the game, indicates if its started, in progress, etc
 	clientsTurn int        // the id of the client whose turn it is (if applicable)
 
-	currentChallenge string // the current challenge string for clientsTurn
+	currentChallenge string          // the current challenge string for clientsTurn
+	usedWords        map[string]bool // the words that have already been used (repeats are not allowed)
 }
 
 func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
@@ -47,6 +48,7 @@ func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
 		lobbyOver:   lobbyOver,
 		Status:      WAITING_FOR_PLAYERS,
 		clientsTurn: -1,
+		usedWords:   make(map[string]bool),
 	}
 }
 
@@ -128,6 +130,7 @@ func (lobby *Lobby) onAnswerSubmitted(message Message) {
 			return
 		}
 
+		lobby.usedWords[answer] = true
 		lobby.BroadcastMessage(Message{Type: ANSWER_ACCEPTED, Content: answer})
 		lobby.changeTurn()
 	}
@@ -152,7 +155,8 @@ func (lobby *Lobby) changeTurn() {
 		}
 	}
 
-	lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: words.GetChallenge()}})
+	lobby.currentChallenge = words.GetChallenge()
+	lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.clientsTurn, Challenge: lobby.currentChallenge}})
 }
 
 func (lobby *Lobby) BroadcastMessage(message Message) {

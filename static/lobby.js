@@ -15,6 +15,7 @@ const WAITING_FOR_PLAYERS = 0
 const IN_PROGRESS         = 1
 const GAME_OVER           = 2
 
+let clientsTurnId;        // the id of the client whose turn it is
 let clientId              // our assigned id for the lobby we're joining
 let startGameButton       // the button to start the game
 
@@ -59,22 +60,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 onClientsTurn(content)
                 break
             case ANSWER_PREVIEW:
-                console.log(`player submitted: ${content}`)
+                onAnswerPreview(content)
                 break
             case ANSWER_ACCEPTED:
-                console.log(`answer ${content} accepted`)
                 break
             case ANSWER_REJECTED:
-                console.log(`answer ${content} rejected`)
+                onAnswerRejected()
                 break
         }
     }
 
-    answerInput.addEventListener("change", () => {
+    answerInput.addEventListener("input", () => {
         let currentInput = answerInput.value
-        if (currentInput) {
-            ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
-        }
+        ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
     })
 
     answerInput.addEventListener('keyup', e => {
@@ -97,15 +95,55 @@ function onClientsTurn(content) {
     gameStatus = IN_PROGRESS
     startGameButton.style.display = "none"
 
+    let newClientsTurnId = content["ClientId"]
     challengeText.textContent = content["Challenge"]
     statusText.style.display = "block"
 
-    if (clientId === content["ClientId"]) {
+    if (clientsTurnId) {
+        document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`).style.visibility = "hidden"
+    }
+
+    document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess]`).textContent = ""
+    document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess-pill]`).style.visibility = "visible"
+
+    if (clientId === newClientsTurnId) {
         // it's our turn
         answerInput.value = ""
         challengeInputSection.style.display = "block"
     } else {
         // it's not our turn
         challengeInputSection.style.display = "none"
+    }
+
+    clientsTurnId = newClientsTurnId
+}
+
+function onAnswerPreview(answerPreview) {
+    let answerPreviewText = answerPreview.length <= 20 ? answerPreview : answerPreview.substring(0, 20).concat("...")
+    document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess]`).textContent = answerPreviewText
+}
+
+function onAnswerRejected() {
+    if (clientsTurnId === clientId) {
+        gsap.to(answerInput, {
+            x: -20,
+            duration: 0.03,
+            ease: Sine.easeIn,
+            onComplete: () => {
+                gsap.fromTo(answerInput, { x: -20 }, {
+                    x: 20,
+                    repeat: 2,
+                    duration: 0.06,
+                    yoyo: true,
+                    ease: Sine.easeInOut,
+                    onComplete: () => {
+                        gsap.to(answerInput, {
+                            x: 0,
+                            ease: Elastic.easeOut
+                        })
+                    }
+                })
+            }
+        })
     }
 }

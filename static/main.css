@@ -1498,6 +1498,10 @@ html {
   margin-inline-start: calc(var(--border-btn) * -1);
 }
 
+.visible {
+  visibility: visible;
+}
+
 .mt-1 {
   margin-top: 0.25rem;
 }
@@ -1528,6 +1532,10 @@ html {
 
 .flex {
   display: flex;
+}
+
+.hidden {
+  display: none;
 }
 
 .h-8 {
@@ -1586,6 +1594,21 @@ html {
 .bg-secondary {
   --tw-bg-opacity: 1;
   background-color: var(--fallback-s,oklch(var(--s)/var(--tw-bg-opacity)));
+}
+
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.px-9 {
+  padding-left: 2.25rem;
+  padding-right: 2.25rem;
+}
+
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
 }
 
 .text-center {
