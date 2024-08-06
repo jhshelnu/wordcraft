@@ -6,6 +6,12 @@
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </head>
     <body class="flex flex-col justify-center items-center">
+        {{if .error}}
+            <div role="alert" class="alert alert-error w-auto absolute mx-auto top-4 flex justify-center align-center">
+                <span class="material-symbols-outlined">error</span>
+                <span>{{.error}}</span>
+            </div>
+        {{end}}
         <h1 class="text-center mt-20">Welcome to <span class="italic">wordgame.</span></h1>
         <article class="h4 text-center">
             wordgame is a multiplayer game about coming up with words given a piece of a word, called a challenge.

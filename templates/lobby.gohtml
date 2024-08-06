@@ -3,7 +3,6 @@
         <title>wordgame</title>
         <script>
             const lobbyId = {{ .lobbyId }};
-            let gameStatus = {{ .gameStatus }};
 
             function renderNewClientCard(newClientId) {
                 let clientsList = document.getElementById("clients-list")
@@ -44,6 +43,6 @@
             <input id="answer-input" type="text" class="input input-accent w-50" />
         </div>
 
-        <button id="start-game-button" class="btn btn-accent w-36 text-lg mt-14" style="display: none">Start game!</button>
+        <button id="start-game-button" class="btn btn-accent min-w-36 text-lg mt-14" disabled>Waiting for players...</button>
     </body>
 </html>

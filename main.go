@@ -35,41 +35,48 @@ func handleIndex(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.gohtml", gin.H{})
 }
 
-func getValidLobbyId(lobbyIdStr string) (uuid.UUID, *HttpError) {
-	lobbyId, err := uuid.Parse(lobbyIdStr)
-	if err != nil {
-		return uuid.UUID{}, &HttpError{status: http.StatusBadRequest, message: fmt.Sprintf("failed to parse lobbyId: %v", err)}
-	}
-
-	if _, exists := lobbies[lobbyId]; !exists {
-		return uuid.UUID{}, &HttpError{status: http.StatusNotFound, message: "Lobby not found"}
-	}
-
-	return lobbyId, nil
-}
-
 // navigates the user to the page for a specific lobby
 func openLobby(c *gin.Context) {
-	lobbyId, httpError := getValidLobbyId(c.Param("lobbyId"))
-	if httpError != nil {
-		c.JSON(httpError.status, gin.H{"message": httpError.message})
+	lobbyId, err := uuid.Parse(c.Param("lobbyId"))
+	if err != nil {
+		c.HTML(http.StatusOK, "index.gohtml", gin.H{
+			"error": "Lobby not found",
+		})
 		return
 	}
 
-	lobby := lobbies[lobbyId]
+	lobby, exists := lobbies[lobbyId]
+	if !exists {
+		c.HTML(http.StatusOK, "index.gohtml", gin.H{
+			"error": "Lobby not found",
+		})
+		return
+	}
+
+	if lobby.Status != game.WAITING_FOR_PLAYERS {
+		c.HTML(http.StatusOK, "index.gohtml", gin.H{
+			"error": "This lobby has already started",
+		})
+		return
+	}
+
 	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{
-		"lobbyId":    lobbyId,
-		"gameStatus": lobby.Status,
-		"clientIds":  lobby.GetClientIds(),
+		"lobbyId":   lobbyId,
+		"clientIds": lobby.GetClientIds(),
 	})
 }
 
 // once on the page for a specific lobby, the browser sends a request here to establish a WebSocket connection
 // this is what actually causes the user to "join" the lobby and be able to play
 func joinLobby(c *gin.Context) {
-	lobbyId, httpError := getValidLobbyId(c.Param("lobbyId"))
-	if httpError != nil {
-		c.JSON(httpError.status, gin.H{"message": httpError.message})
+	lobbyId, err := uuid.Parse(c.Param("lobbyId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("failed to parse lobbyId: %v", err)})
+		return
+	}
+
+	if _, exists := lobbies[lobbyId]; !exists {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Lobby not found"})
 		return
 	}
 

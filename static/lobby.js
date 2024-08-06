@@ -7,13 +7,9 @@ const SUBMIT_ANSWER      = "submit_answer"      // when the client submits an an
 const ANSWER_PREVIEW     = "answer_preview"     // preview of the current answer (not submitted) so other clients can see
 const ANSWER_ACCEPTED    = "answer_accepted"    // the answer is accepted
 const ANSWER_REJECTED    = "answer_rejected"    // the answer is not accepted
-const TIMES_UP           = "times_up"           // client has run out of time
+const TURN_EXPIRED       = "turn_expired"       // client has run out of time
 const CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
-
-// game statuses
-const WAITING_FOR_PLAYERS = 0
-const IN_PROGRESS         = 1
-const GAME_OVER           = 2
+const GAME_OVER          = "game_over"          // the game is over
 
 let clientsTurnId;        // the id of the client whose turn it is
 let clientId              // our assigned id for the lobby we're joining
@@ -33,10 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
     answerInput = document.getElementById("answer-input")
     challengeText = document.getElementById("challenge-text")
     statusText = document.getElementById("status-text")
-
-    if (gameStatus === WAITING_FOR_PLAYERS) {
-        startGameButton.style.display = "inline"
-    }
 
     startGameButton.addEventListener("click", () => {
         ws.send(JSON.stringify({ Type: START_GAME }))
@@ -67,6 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
             case ANSWER_REJECTED:
                 onAnswerRejected()
                 break
+            case GAME_OVER:
+                onGameOver()
+                break
         }
     }
 
@@ -85,6 +80,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function onClientJoined(newClientId) {
     renderNewClientCard(newClientId)
+    if (document.getElementById("clients-list").children.length >= 2) {
+        startGameButton.textContent = "Start game!"
+        startGameButton.removeAttribute("disabled")
+    }
 }
 
 function onClientLeft(leavingClientId) {
@@ -92,7 +91,6 @@ function onClientLeft(leavingClientId) {
 }
 
 function onClientsTurn(content) {
-    gameStatus = IN_PROGRESS
     startGameButton.style.display = "none"
 
     let newClientsTurnId = content["ClientId"]
@@ -125,25 +123,37 @@ function onAnswerPreview(answerPreview) {
 
 function onAnswerRejected() {
     if (clientsTurnId === clientId) {
-        gsap.to(answerInput, {
-            x: -20,
-            duration: 0.03,
-            ease: Sine.easeIn,
-            onComplete: () => {
-                gsap.fromTo(answerInput, { x: -20 }, {
-                    x: 20,
-                    repeat: 2,
-                    duration: 0.06,
-                    yoyo: true,
-                    ease: Sine.easeInOut,
-                    onComplete: () => {
-                        gsap.to(answerInput, {
-                            x: 0,
-                            ease: Elastic.easeOut
-                        })
-                    }
-                })
-            }
-        })
+        shakeElement(answerInput, 20)
     }
+
+    let pill = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
+    shakeElement(pill, 10)
+}
+
+function shakeElement(e, amt) {
+    gsap.to(e, {
+        x: -amt,
+        duration: 0.03,
+        ease: Sine.easeIn,
+        onComplete: () => {
+            gsap.fromTo(e, { x: -amt }, {
+                x: amt,
+                repeat: 2,
+                duration: 0.06,
+                yoyo: true,
+                ease: Sine.easeInOut,
+                onComplete: () => {
+                    gsap.to(e, {
+                        x: 0,
+                        ease: Elastic.easeOut
+                    })
+                }
+            })
+        }
+    })
+}
+
+function onGameOver() {
+    // todo: announce the end of the game better
+    console.log('the game is over')
 }

@@ -11,8 +11,9 @@ const (
 	ANSWER_PREVIEW     = "answer_preview"     // preview of the current answer (not submitted) so other clients can see
 	ANSWER_ACCEPTED    = "answer_accepted"    // the answer is accepted
 	ANSWER_REJECTED    = "answer_rejected"    // the answer is not accepted
-	TIMES_UP           = "times_up"           // client has run out of time
+	TURN_EXPIRED       = "turn_expired"       // client has run out of time
 	CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
+	GAME_OVER          = "game_over"          // the game is over
 )
 
 type Message struct {
