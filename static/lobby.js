@@ -22,7 +22,7 @@ let statusText            // large text at the top of the screen displaying the 
 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
-    let ws = new WebSocket(`ws://localhost:8080/ws/${lobbyId}`)
+    let ws = new WebSocket(`ws://${location.host}/ws/${lobbyId}`)
 
     startGameButton = document.getElementById("start-game-button")
     challengeInputSection = document.getElementById("challenge-input-section")
