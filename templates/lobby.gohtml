@@ -14,10 +14,10 @@
                             src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
                             alt="Shoes" />
                         <div class="card-body items-center">
-                            <h2 class="card-title relative">
-                                <span data-display-name>${displayName}</span>
-                                ${isMe ? "<button id=\"pencil\" class=\"button btn-ghost p-1 rounded-lg absolute -right-8\"><span class=\"material-symbols-outlined\">edit</span><button>" : ""}
-                            </h2>
+                            ${isMe
+                                ? `<input id="my-display-name" class="input card-title text-center w-44" value="${displayName}">`
+                                : `<p data-display-name class="card-title">${displayName}</p>`
+                            }
                             <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center" style="visibility: hidden">
                                 <p data-current-guess class="font-bold px-3" style="color: oklch(var(--sc))"></p>
                             </div>

@@ -12,8 +12,9 @@ const CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
 const GAME_OVER          = "game_over"          // the game is over
 const NAME_CHANGE        = "name_change"        // used by clients to indicate they want a new display name
 
+let ws                    // the websocket connection
 let clientId              // our assigned id for the lobby we're joining
-let pencil                // the edit name button
+let myDisplayNameInput    // the <input> which holds our current displayName
 let startGameButton       // the button to start the game
 let clientsTurnId;        // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
@@ -23,7 +24,7 @@ let statusText            // large text at the top of the screen displaying the 
 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
-    let ws = new WebSocket(`ws://${location.host}/ws/${lobbyId}`)
+    ws = new WebSocket(`ws://${location.host}/ws/${lobbyId}`)
     startGameButton = document.getElementById("start-game-button")
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
@@ -71,9 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
     })
 
-    answerInput.addEventListener('keyup', e => {
+    answerInput.addEventListener("keyup", e => {
         let input = answerInput.value
-        if (e.key === 'Enter' && input) {
+        if (e.key === "Enter" && input) {
             ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
         }
     })
@@ -90,7 +91,28 @@ function onClientJoined(content) {
 
     if (newClientId === clientId) {
         renderNewClientCard(newClientId, displayName, true)
-        pencil = document.getElementById("pencil")
+        myDisplayNameInput = document.getElementById("my-display-name")
+
+        // on change, broadcast new name to the other clients
+        myDisplayNameInput.addEventListener("input", () => {
+            let newDisplayName = myDisplayNameInput.value
+            ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: newDisplayName }))
+        })
+
+        // on focus, preselect the text for convenience
+        myDisplayNameInput.addEventListener("focus", e => {
+            myDisplayNameInput.select()
+        })
+
+        // on enter hit, remove focus from input for convenience
+        myDisplayNameInput.addEventListener("keyup", e => {
+            if (e.key === "Enter") {
+                myDisplayNameInput.blur() // unfocus the element on enter
+            }
+        })
+
+        // once joined, pre-select the text for convenience
+        myDisplayNameInput.select()
     } else {
         renderNewClientCard(newClientId, displayName, false)
     }
@@ -108,7 +130,11 @@ function onClientLeft(leavingClientId) {
 function onNameChange(content) {
     let renamingClientId = content["ClientId"]
     let newDisplayName = content["NewDisplayName"]
-    document.querySelector(`#clients-list [data-client-id="${renamingClientId}"] [data-display-name]`).textContent = newDisplayName
+    // for our own name change, the user has already updated the input,
+    // so, only need to handle the case of other users changing their name
+    if (renamingClientId !== clientId) {
+        document.querySelector(`#clients-list [data-client-id="${renamingClientId}"] [data-display-name]`).textContent = newDisplayName
+    }
 }
 
 function onClientsTurn(content) {
