@@ -6,15 +6,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/jhshelnu/wordgame/game"
+	"github.com/jhshelnu/wordgame/icons"
 	"github.com/jhshelnu/wordgame/words"
 	"log"
 	"net/http"
 )
-
-type HttpError struct {
-	status  int
-	message string
-}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -66,6 +62,7 @@ func openLobby(c *gin.Context) {
 		clientDetails = append(clientDetails, gin.H{
 			"clientId":    client.Id,
 			"displayName": client.DisplayName,
+			"iconName":    client.IconName,
 		})
 	}
 
@@ -114,6 +111,10 @@ func handleEndedLobbies() {
 
 func main() {
 	if err := words.Init(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := icons.Init(); err != nil {
 		log.Fatal(err)
 	}
 

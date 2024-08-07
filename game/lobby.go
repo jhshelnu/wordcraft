@@ -94,7 +94,11 @@ func (lobby *Lobby) StartLobby() {
 func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 	lobby.clients[joiningClient.Id] = joiningClient
 	lobby.aliveClients = append(lobby.aliveClients, joiningClient)
-	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: ClientJoinedContent{ClientId: joiningClient.Id, DisplayName: joiningClient.DisplayName}})
+	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: ClientJoinedContent{
+		ClientId:    joiningClient.Id,
+		DisplayName: joiningClient.DisplayName,
+		IconName:    joiningClient.IconName,
+	}})
 	log.Printf("[Lobby %s] Client %d connected\n", lobby.Id, joiningClient.Id)
 }
 

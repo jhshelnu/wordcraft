@@ -4,15 +4,15 @@
         <script>
             const lobbyId = {{ .lobbyId }};
 
-            function renderNewClientCard(newClientId, displayName, isMe) {
+            function renderNewClientCard(newClientId, displayName, iconName, isMe) {
                 let clientsList = document.getElementById("clients-list")
                 let template = document.createElement("template")
                 template.innerHTML = `
                     <div data-client-id="${newClientId}" class="card card-compact bg-base-100 w-52 shadow-2xl">
                         <img
-                            class="mask mask-circle"
-                            src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                            alt="Shoes" />
+                            class="mask max-w-36 mx-auto"
+                            src="/static/icons/${iconName}"
+                            alt="${iconName}" />
                         <div class="card-body items-center">
                             ${isMe
                                 ? `<input id="my-display-name" class="input card-title text-center w-44" value="${displayName}">`
@@ -29,7 +29,7 @@
 
             document.addEventListener("DOMContentLoaded", () => {
                 {{range .clients}}
-                renderNewClientCard({{.clientId}}, {{.displayName}}, false)
+                renderNewClientCard({{.clientId}}, {{.displayName}}, {{.iconName}}, false)
                 {{end}}
             })
         </script>

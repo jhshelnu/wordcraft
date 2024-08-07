@@ -4,11 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"github.com/jhshelnu/wordgame/icons"
 )
 
 type Client struct {
 	Id          int             // uniquely identifies the Client within the Lobby
 	DisplayName string          // the display name for the client (shown to other players)
+	IconName    string          // the file name of the icon to show for this client in the lobby
 	Lobby       *Lobby          // holds a reference to the Lobby that the client is in
 	ws          *websocket.Conn // holds a reference to the WebSocket connection
 	write       chan Message    // a write channel used by the Lobby to pass messages that the client should transmit over the websocket
@@ -27,6 +29,7 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 	client := &Client{
 		Id:          Id,
 		DisplayName: fmt.Sprintf("Player %d", Id),
+		IconName:    icons.GetRandomIconName(),
 		Lobby:       lobby,
 		ws:          ws,
 		write:       make(chan Message),

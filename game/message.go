@@ -31,6 +31,7 @@ type ClientsTurnContent struct {
 type ClientJoinedContent struct {
 	ClientId    int    // the id of the newly joined client
 	DisplayName string // what their name is
+	IconName    string // which icon they are using
 }
 
 type ClientNameChange struct {

@@ -83,9 +83,10 @@ document.addEventListener("DOMContentLoaded", () => {
 function onClientJoined(content) {
     let newClientId = content["ClientId"]
     let displayName = content["DisplayName"]
+    let iconName    = content["IconName"]
 
     if (newClientId === clientId) {
-        renderNewClientCard(newClientId, displayName, true)
+        renderNewClientCard(newClientId, displayName, iconName, true)
         myDisplayNameInput = document.getElementById("my-display-name")
 
         // on change, broadcast new name to the other clients
@@ -117,7 +118,7 @@ function onClientJoined(content) {
         // once joined, pre-select the text for convenience
         myDisplayNameInput.select()
     } else {
-        renderNewClientCard(newClientId, displayName, false)
+        renderNewClientCard(newClientId, displayName, iconName, false)
     }
 
     if (document.getElementById("clients-list").children.length >= 2) {
