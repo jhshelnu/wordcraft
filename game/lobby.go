@@ -11,7 +11,10 @@ import (
 	"time"
 )
 
-const TURN_LIMIT_SECONDS = 12
+const (
+	TURN_LIMIT_SECONDS = 12
+	MAX_DISPLAY_NAME   = 15
+)
 
 type gameStatus int
 
@@ -64,8 +67,8 @@ func (lobby *Lobby) GetNextClientId() int {
 	return lobby.lastClientId
 }
 
-func (lobby *Lobby) GetClientIds() []int {
-	return slices.Sorted(maps.Keys(lobby.clients))
+func (lobby *Lobby) GetClients() []*Client {
+	return slices.SortedFunc(maps.Values(lobby.clients), func(client1 *Client, client2 *Client) int { return client1.Id - client2.Id })
 }
 
 func (lobby *Lobby) StartLobby() {
@@ -91,7 +94,7 @@ func (lobby *Lobby) StartLobby() {
 func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 	lobby.clients[joiningClient.Id] = joiningClient
 	lobby.aliveClients = append(lobby.aliveClients, joiningClient)
-	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: joiningClient.Id})
+	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: ClientJoinedContent{ClientId: joiningClient.Id, DisplayName: joiningClient.DisplayName}})
 	log.Printf("[Lobby %s] Client %d connected\n", lobby.Id, joiningClient.Id)
 }
 
@@ -119,6 +122,8 @@ func (lobby *Lobby) onMessage(message Message) {
 		lobby.onAnswerPreview(message)
 	case SUBMIT_ANSWER:
 		lobby.onAnswerSubmitted(message)
+	case NAME_CHANGE:
+		lobby.onNameChange(message)
 	}
 }
 
@@ -138,6 +143,19 @@ func (lobby *Lobby) onStartGame() {
 	if lobby.Status == WAITING_FOR_PLAYERS && len(lobby.clients) >= 2 {
 		lobby.Status = IN_PROGRESS
 		lobby.changeTurn(false)
+	}
+}
+
+func (lobby *Lobby) onNameChange(message Message) {
+	if lobby.Status == WAITING_FOR_PLAYERS {
+		newDisplayName, ok := message.Content.(string)
+		if !ok || len(newDisplayName) > MAX_DISPLAY_NAME {
+			return
+		}
+
+		client := lobby.clients[message.From]
+		client.DisplayName = newDisplayName
+		lobby.BroadcastMessage(Message{Type: NAME_CHANGE, Content: ClientNameChange{ClientId: client.Id, NewDisplayName: newDisplayName}})
 	}
 }
 

@@ -10,11 +10,12 @@ const ANSWER_REJECTED    = "answer_rejected"    // the answer is not accepted
 const TURN_EXPIRED       = "turn_expired"       // client has run out of time
 const CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
 const GAME_OVER          = "game_over"          // the game is over
+const NAME_CHANGE        = "name_change"        // used by clients to indicate they want a new display name
 
-let clientsTurnId;        // the id of the client whose turn it is
 let clientId              // our assigned id for the lobby we're joining
+let pencil                // the edit name button
 let startGameButton       // the button to start the game
-
+let clientsTurnId;        // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let challengeText         // the text displaying the current challenge to the user
 let answerInput           // the input element which holds what the user has typed so far
@@ -23,7 +24,6 @@ let statusText            // large text at the top of the screen displaying the 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
     let ws = new WebSocket(`ws://${location.host}/ws/${lobbyId}`)
-
     startGameButton = document.getElementById("start-game-button")
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
@@ -48,13 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
             case CLIENT_LEFT:
                 onClientLeft(content)
                 break
+            case NAME_CHANGE:
+                onNameChange(content)
+                break
             case CLIENTS_TURN:
                 onClientsTurn(content)
                 break
             case ANSWER_PREVIEW:
                 onAnswerPreview(content)
-                break
-            case ANSWER_ACCEPTED:
                 break
             case ANSWER_REJECTED:
                 onAnswerRejected()
@@ -76,10 +77,24 @@ document.addEventListener("DOMContentLoaded", () => {
             ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
         }
     })
+
+    // todo: remove - temporary for testing purposes
+    window.testNameChange = function(newDisplayName) {
+        ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: newDisplayName }))
+    }
 })
 
-function onClientJoined(newClientId) {
-    renderNewClientCard(newClientId)
+function onClientJoined(content) {
+    let newClientId = content["ClientId"]
+    let displayName = content["DisplayName"]
+
+    if (newClientId === clientId) {
+        renderNewClientCard(newClientId, displayName, true)
+        pencil = document.getElementById("pencil")
+    } else {
+        renderNewClientCard(newClientId, displayName, false)
+    }
+
     if (document.getElementById("clients-list").children.length >= 2) {
         startGameButton.textContent = "Start game!"
         startGameButton.removeAttribute("disabled")
@@ -90,8 +105,15 @@ function onClientLeft(leavingClientId) {
     document.querySelector(`#clients-list [data-client-id="${leavingClientId}"]`).remove()
 }
 
+function onNameChange(content) {
+    let renamingClientId = content["ClientId"]
+    let newDisplayName = content["NewDisplayName"]
+    document.querySelector(`#clients-list [data-client-id="${renamingClientId}"] [data-display-name]`).textContent = newDisplayName
+}
+
 function onClientsTurn(content) {
     startGameButton.style.display = "none"
+    pencil.style.display = "none"
 
     let newClientsTurnId = content["ClientId"]
     challengeText.textContent = content["Challenge"]

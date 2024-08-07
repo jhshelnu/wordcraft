@@ -60,9 +60,18 @@ func openLobby(c *gin.Context) {
 		return
 	}
 
+	clients := lobby.GetClients()
+	clientDetails := make([]gin.H, 0, len(clients))
+	for _, client := range clients {
+		clientDetails = append(clientDetails, gin.H{
+			"clientId":    client.Id,
+			"displayName": client.DisplayName,
+		})
+	}
+
 	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{
-		"lobbyId":   lobbyId,
-		"clientIds": lobby.GetClientIds(),
+		"lobbyId": lobbyId,
+		"clients": clientDetails,
 	})
 }
 

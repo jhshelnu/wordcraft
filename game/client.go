@@ -2,14 +2,16 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gorilla/websocket"
 )
 
 type Client struct {
-	Id    int             // uniquely identifies the Client within the Lobby
-	Lobby *Lobby          // holds a reference to the Lobby that the client is in
-	ws    *websocket.Conn // holds a reference to the WebSocket connection
-	write chan Message    // a write channel used by the Lobby to pass messages that the client should transmit over the websocket
+	Id          int             // uniquely identifies the Client within the Lobby
+	DisplayName string          // the display name for the client (shown to other players)
+	Lobby       *Lobby          // holds a reference to the Lobby that the client is in
+	ws          *websocket.Conn // holds a reference to the WebSocket connection
+	write       chan Message    // a write channel used by the Lobby to pass messages that the client should transmit over the websocket
 }
 
 func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
@@ -21,11 +23,13 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 		return errors.New("client must belong to a lobby")
 	}
 
+	Id := lobby.GetNextClientId()
 	client := &Client{
-		Id:    lobby.GetNextClientId(),
-		Lobby: lobby,
-		ws:    ws,
-		write: make(chan Message),
+		Id:          Id,
+		DisplayName: fmt.Sprintf("Player %d", Id),
+		Lobby:       lobby,
+		ws:          ws,
+		write:       make(chan Message),
 	}
 
 	_ = ws.WriteJSON(Message{Type: CLIENT_ID_ASSIGNED, Content: client.Id})

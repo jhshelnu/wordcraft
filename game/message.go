@@ -14,6 +14,7 @@ const (
 	TURN_EXPIRED       = "turn_expired"       // client has run out of time
 	CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
 	GAME_OVER          = "game_over"          // the game is over
+	NAME_CHANGE        = "name_change"        // used by clients to indicate they want a new display name
 )
 
 type Message struct {
@@ -25,4 +26,14 @@ type Message struct {
 type ClientsTurnContent struct {
 	ClientId  int    // whose turn it is
 	Challenge string // what the challenge string is, e.g. "atr"
+}
+
+type ClientJoinedContent struct {
+	ClientId    int    // the id of the newly joined client
+	DisplayName string // what their name is
+}
+
+type ClientNameChange struct {
+	ClientId       int    // who is changing their name
+	NewDisplayName string // what they are changing their name to
 }
