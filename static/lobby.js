@@ -129,6 +129,10 @@ function onClientJoined(content) {
 
 function onClientLeft(leavingClientId) {
     document.querySelector(`#clients-list [data-client-id="${leavingClientId}"]`).remove()
+    if (document.getElementById("clients-list").children.length < 2) {
+        startGameButton.textContent = "Waiting for players..."
+        startGameButton.setAttribute("disabled", "")
+    }
 }
 
 function onNameChange(content) {

@@ -4,6 +4,10 @@
         <script>
             const lobbyId = {{ .lobbyId }};
 
+            function leaveLobby() {
+                location.href = "/"
+            }
+
             function renderNewClientCard(newClientId, displayName, iconName, isMe) {
                 let clientsList = document.getElementById("clients-list")
                 let template = document.createElement("template")
@@ -39,6 +43,10 @@
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </head>
     <body class="flex flex-col items-center">
+        <button class="btn btn-outline btn-error absolute top-3 left-3" onclick="leaveLobby()">
+            <span class="material-symbols-outlined -ml-3 -mr-1 mt-0.5">chevron_left</span>
+            Leave lobby
+        </button>
         <h2 id="status-text" class="h2 w-full text-center" style="display: none">Challenge: <span id="challenge-text"></span></h2>
         <div id="clients-list" class="flex flex-row gap-4 mt-10"></div>
 
