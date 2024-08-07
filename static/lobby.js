@@ -142,7 +142,6 @@ function onNameChange(content) {
 
 function onClientsTurn(content) {
     startGameButton.style.display = "none"
-    pencil.style.display = "none"
 
     let newClientsTurnId = content["ClientId"]
     challengeText.textContent = content["Challenge"]
