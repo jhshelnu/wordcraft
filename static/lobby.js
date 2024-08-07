@@ -16,11 +16,13 @@ let ws                    // the websocket connection
 let clientId              // our assigned id for the lobby we're joining
 let myDisplayNameInput    // the <input> which holds our current displayName
 let startGameButton       // the button to start the game
-let clientsTurnId;        // the id of the client whose turn it is
+let clientsTurnId         // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let challengeText         // the text displaying the current challenge to the user
 let answerInput           // the input element which holds what the user has typed so far
 let statusText            // large text at the top of the screen displaying the current challenge
+
+let answerAcceptedAudio   // what plays when an answer is accepted
 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
@@ -30,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
     answerInput = document.getElementById("answer-input")
     challengeText = document.getElementById("challenge-text")
     statusText = document.getElementById("status-text")
+
+    answerAcceptedAudio = new Audio("/static/sounds/answer_accepted.mp3")
 
     startGameButton.addEventListener("click", () => {
         ws.send(JSON.stringify({ Type: START_GAME }))
@@ -57,6 +61,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 break
             case ANSWER_PREVIEW:
                 onAnswerPreview(content)
+                break
+            case ANSWER_ACCEPTED:
+                onAnswerAccepted()
                 break
             case ANSWER_REJECTED:
                 onAnswerRejected()
@@ -174,6 +181,11 @@ function onClientsTurn(content) {
 function onAnswerPreview(answerPreview) {
     let answerPreviewText = answerPreview.length <= 20 ? answerPreview : answerPreview.substring(0, 20).concat("...")
     document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess]`).textContent = answerPreviewText
+}
+
+function onAnswerAccepted() {
+    answerAcceptedAudio.play()
+    answerAcceptedAudio.volume = 0.4
 }
 
 function onAnswerRejected() {
