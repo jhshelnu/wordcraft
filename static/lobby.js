@@ -78,11 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
             ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
         }
     })
-
-    // todo: remove - temporary for testing purposes
-    window.testNameChange = function(newDisplayName) {
-        ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: newDisplayName }))
-    }
 })
 
 function onClientJoined(content) {
@@ -100,7 +95,7 @@ function onClientJoined(content) {
         })
 
         // on focus, preselect the text for convenience
-        myDisplayNameInput.addEventListener("focus", e => {
+        myDisplayNameInput.addEventListener("focus", () => {
             myDisplayNameInput.select()
         })
 
@@ -108,6 +103,14 @@ function onClientJoined(content) {
         myDisplayNameInput.addEventListener("keyup", e => {
             if (e.key === "Enter") {
                 myDisplayNameInput.blur() // unfocus the element on enter
+            }
+        })
+
+        // on unfocus, if the name is blank, reset it to the default name
+        myDisplayNameInput.addEventListener("blur", () => {
+            if (!myDisplayNameInput.value) {
+                myDisplayNameInput.value = `Player ${clientId}`
+                ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: myDisplayNameInput.value }))
             }
         })
 
