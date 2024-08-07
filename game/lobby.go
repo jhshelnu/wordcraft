@@ -2,6 +2,7 @@ package game
 
 import (
 	"github.com/google/uuid"
+	"github.com/jhshelnu/wordgame/icons"
 	"github.com/jhshelnu/wordgame/words"
 	"log"
 	"maps"
@@ -30,6 +31,8 @@ type Lobby struct {
 	leave chan *Client // channel for existing clients to leave the lobby
 	read  chan Message // channel for existing clients to send messages for the Lobby to read
 
+	iconNames []string // a slice of icon names (shuffled for each lobby)
+
 	Status       gameStatus      // the Status of the game, indicates if its started, in progress, etc
 	clients      map[int]*Client // all clients in the lobby, indexed by their id
 	aliveClients []*Client       // all clients in the lobby who are not out
@@ -51,6 +54,7 @@ func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
 		join:      make(chan *Client),
 		leave:     make(chan *Client),
 		read:      make(chan Message),
+		iconNames: icons.GetShuffledIconNames(),
 		Status:    WAITING_FOR_PLAYERS,
 		clients:   make(map[int]*Client),
 		turnIndex: -1,
@@ -65,6 +69,10 @@ func (lobby *Lobby) GetNextClientId() int {
 
 	lobby.lastClientId++
 	return lobby.lastClientId
+}
+
+func (lobby *Lobby) GetDefaultIconName(id int) string {
+	return lobby.iconNames[(id-1)%len(lobby.iconNames)]
 }
 
 func (lobby *Lobby) GetClients() []*Client {

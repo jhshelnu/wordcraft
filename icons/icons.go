@@ -23,6 +23,13 @@ func Init() error {
 	return nil
 }
 
-func GetRandomIconName() string {
-	return iconNames[rand.IntN(len(iconNames))]
+func GetShuffledIconNames() []string {
+	iconNamesShuffled := make([]string, len(iconNames))
+	copy(iconNamesShuffled, iconNames)
+
+	rand.Shuffle(len(iconNamesShuffled), func(i, j int) {
+		iconNamesShuffled[i], iconNamesShuffled[j] = iconNamesShuffled[j], iconNamesShuffled[i]
+	})
+
+	return iconNamesShuffled
 }

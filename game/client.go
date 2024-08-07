@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/jhshelnu/wordgame/icons"
 )
 
 type Client struct {
@@ -29,7 +28,7 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 	client := &Client{
 		Id:          Id,
 		DisplayName: fmt.Sprintf("Player %d", Id),
-		IconName:    icons.GetRandomIconName(),
+		IconName:    lobby.GetDefaultIconName(Id),
 		Lobby:       lobby,
 		ws:          ws,
 		write:       make(chan Message),
