@@ -324,7 +324,6 @@ cos
 cot
 cou
 cov
-cp
 cq
 cr
 cra

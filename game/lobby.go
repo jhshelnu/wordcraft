@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	TURN_LIMIT_SECONDS = 12
+	TURN_LIMIT_SECONDS = 20
 	MAX_DISPLAY_NAME   = 15
 )
 
