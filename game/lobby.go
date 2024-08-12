@@ -114,13 +114,15 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 	delete(lobby.clients, leavingClient.Id)
 
 	// not very efficient, but there won't be many clients anyway
-	aliveClients := make([]*Client, 0, len(lobby.aliveClients)-1)
-	for _, c := range lobby.aliveClients {
-		if c.Id != leavingClient.Id {
-			aliveClients = append(aliveClients, c)
+	if lobby.Status == IN_PROGRESS {
+		aliveClients := make([]*Client, 0, len(lobby.aliveClients)-1)
+		for _, c := range lobby.aliveClients {
+			if c.Id != leavingClient.Id {
+				aliveClients = append(aliveClients, c)
+			}
 		}
+		lobby.aliveClients = aliveClients
 	}
-	lobby.aliveClients = aliveClients
 
 	lobby.BroadcastMessage(Message{Type: CLIENT_LEFT, Content: leavingClient.Id})
 	log.Printf("[Lobby %s] Client %d disconnected\n", lobby.Id, leavingClient.Id)
@@ -140,7 +142,7 @@ func (lobby *Lobby) onMessage(message Message) {
 }
 
 func (lobby *Lobby) onTurnExpired() {
-	lobby.BroadcastMessage(Message{Type: TURN_EXPIRED})
+	lobby.BroadcastMessage(Message{Type: TURN_EXPIRED, Content: lobby.aliveClients[lobby.turnIndex].Id})
 	if len(lobby.aliveClients) > 2 {
 		// at least 2 clients still alive, keep the game going (lobby#changeTurn will handle dropping them)
 		lobby.changeTurn(true)
@@ -184,7 +186,7 @@ func (lobby *Lobby) onAnswerSubmitted(message Message) {
 			return
 		}
 
-		if !words.IsValidWord(answer) || !strings.Contains(answer, lobby.currentChallenge) {
+		if !words.IsValidWord(answer) || !strings.Contains(answer, lobby.currentChallenge) || lobby.usedWords[answer] {
 			lobby.BroadcastMessage(Message{Type: ANSWER_REJECTED, Content: answer})
 			return
 		}

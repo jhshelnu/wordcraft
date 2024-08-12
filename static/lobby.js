@@ -22,7 +22,10 @@ let challengeText         // the text displaying the current challenge to the us
 let answerInput           // the input element which holds what the user has typed so far
 let statusText            // large text at the top of the screen displaying the current challenge
 
-let answerAcceptedAudio   // what plays when an answer is accepted
+const VOLUME = 0.4 // how loud to play the audio
+let answerAcceptedAudio    // what plays when an answer is accepted
+let clientJoinedAudio      // what plays when another client joins
+let clientEliminated       // what plays when time runs out for a client
 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
@@ -34,6 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
     statusText = document.getElementById("status-text")
 
     answerAcceptedAudio = new Audio("/static/sounds/answer_accepted.mp3")
+    clientJoinedAudio   = new Audio("/static/sounds/client_joined.mp3")
+    clientEliminated    = new Audio("/static/sounds/client_eliminated.wav")
 
     startGameButton.addEventListener("click", () => {
         ws.send(JSON.stringify({ Type: START_GAME }))
@@ -67,6 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 break
             case ANSWER_REJECTED:
                 onAnswerRejected()
+                break
+            case TURN_EXPIRED:
+                onTurnExpired(content)
                 break
             case GAME_OVER:
                 onGameOver()
@@ -128,6 +136,9 @@ function onClientJoined(content) {
         renderNewClientCard(newClientId, displayName, iconName, false)
     }
 
+    clientJoinedAudio.volume = VOLUME
+    clientJoinedAudio.play()
+
     if (document.getElementById("clients-list").children.length >= 2) {
         startGameButton.textContent = "Start game!"
         startGameButton.removeAttribute("disabled")
@@ -184,8 +195,8 @@ function onAnswerPreview(answerPreview) {
 }
 
 function onAnswerAccepted() {
+    answerAcceptedAudio.volume = VOLUME
     answerAcceptedAudio.play()
-    answerAcceptedAudio.volume = 0.4
 }
 
 function onAnswerRejected() {
@@ -195,6 +206,20 @@ function onAnswerRejected() {
 
     let pill = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
     shakeElement(pill, 10)
+}
+
+function onTurnExpired(eliminatedClientId) {
+    document.querySelector(`#clients-list [data-client-id="${eliminatedClientId}"]`).classList.add("opacity-40")
+    clientEliminated.volume = VOLUME
+    clientEliminated.play()
+    if (eliminatedClientId === clientId) {
+        challengeInputSection.style.display = "none"
+    }
+}
+
+function onGameOver() {
+    // todo: announce the end of the game better
+    console.log('the game is over')
 }
 
 function shakeElement(e, amt) {
@@ -218,9 +243,4 @@ function shakeElement(e, amt) {
             })
         }
     })
-}
-
-function onGameOver() {
-    // todo: announce the end of the game better
-    console.log('the game is over')
 }
