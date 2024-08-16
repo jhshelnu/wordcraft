@@ -81,6 +81,12 @@ func (lobby *Lobby) GetClients() []*Client {
 
 func (lobby *Lobby) StartLobby() {
 	defer lobby.EndLobby()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[Lobby %s] Encountered fatal error: %v\n", lobby.Id, r)
+		}
+	}()
+
 	for {
 		select {
 		case client := <-lobby.join:
@@ -111,7 +117,9 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 }
 
 func (lobby *Lobby) onClientLeave(leavingClient *Client) {
+	log.Printf("[Lobby %s] Client %d disconnected\n", lobby.Id, leavingClient.Id)
 	delete(lobby.clients, leavingClient.Id)
+	lobby.BroadcastMessage(Message{Type: CLIENT_LEFT, Content: leavingClient.Id})
 
 	// not very efficient, but there won't be many clients anyway
 	if lobby.Status == IN_PROGRESS {
@@ -124,8 +132,13 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 		lobby.aliveClients = aliveClients
 	}
 
-	lobby.BroadcastMessage(Message{Type: CLIENT_LEFT, Content: leavingClient.Id})
-	log.Printf("[Lobby %s] Client %d disconnected\n", lobby.Id, leavingClient.Id)
+	if len(lobby.aliveClients) == 1 {
+		// only one client left, we have a winner i guess
+		lobby.Status = OVER
+		lobby.BroadcastMessage(Message{Type: GAME_OVER})
+	} else {
+		lobby.changeTurn(true)
+	}
 }
 
 func (lobby *Lobby) onMessage(message Message) {
@@ -149,7 +162,17 @@ func (lobby *Lobby) onTurnExpired() {
 	} else {
 		// only one client alive, we have a winner
 		lobby.Status = OVER
-		lobby.BroadcastMessage(Message{Type: GAME_OVER})
+
+		// we're here because there are 2 clients remaining and one of them just had their turn expire
+		// so, the winner is the *other* one
+		var winningClientId int
+		if lobby.turnIndex == 0 {
+			winningClientId = lobby.aliveClients[1].Id
+		} else {
+			winningClientId = lobby.aliveClients[0].Id
+		}
+
+		lobby.BroadcastMessage(Message{Type: GAME_OVER, Content: winningClientId})
 	}
 }
 
@@ -197,12 +220,15 @@ func (lobby *Lobby) onAnswerSubmitted(message Message) {
 	}
 }
 
-func (lobby *Lobby) changeTurn(turnExpired bool) {
-	if !turnExpired {
-		// if the last client didn't run out of time, this is easy
+// removeCurrentClient indicates if the client (whose turn it is) has gone out
+// this can happen either by time running out, or by the client disconnecting
+// regardless, it is the responsibility of this method to properly update the aliveClients and turnIndex variables
+func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
+	if !removeCurrentClient {
+		// if the last client didn't run out of time or disconnect, this is easy
 		lobby.turnIndex = (lobby.turnIndex + 1) % len(lobby.aliveClients)
 	} else {
-		// if they did run out of time:
+		// if they ran out of time or disconnected:
 		// - kick them out of the aliveClients
 		// - turnIndex can stay the same (since the next client will now occupy that index)
 		//   unless the last client got eliminated, in which case just need to reset the turnIndex to 0

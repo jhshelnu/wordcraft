@@ -137,8 +137,7 @@ func main() {
 	// WebSocket
 	server.GET("/ws/:lobbyId", joinLobby)
 
-	log.Println("Starting server on port 8080")
-	if err := server.Run(":8080"); err != nil {
+	if err := server.Run(); err != nil {
 		log.Fatalf("Failed to start application server: %v", err)
 	}
 }

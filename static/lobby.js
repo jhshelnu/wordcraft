@@ -18,9 +18,8 @@ let myDisplayNameInput    // the <input> which holds our current displayName
 let startGameButton       // the button to start the game
 let clientsTurnId         // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
-let challengeText         // the text displaying the current challenge to the user
 let answerInput           // the input element which holds what the user has typed so far
-let statusText            // large text at the top of the screen displaying the current challenge
+let statusText            // large text at the top of the screen displaying the current status (current challenge, who won, etc)
 
 const VOLUME = 0.4 // how loud to play the audio
 let answerAcceptedAudio    // what plays when an answer is accepted
@@ -33,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
     startGameButton = document.getElementById("start-game-button")
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
-    challengeText = document.getElementById("challenge-text")
     statusText = document.getElementById("status-text")
 
     answerAcceptedAudio = new Audio("/static/sounds/answer_accepted.mp3")
@@ -77,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 onTurnExpired(content)
                 break
             case GAME_OVER:
-                onGameOver()
+                onGameOver(content)
                 break
         }
     }
@@ -167,7 +165,7 @@ function onClientsTurn(content) {
     startGameButton.style.display = "none"
 
     let newClientsTurnId = content["ClientId"]
-    challengeText.textContent = content["Challenge"]
+    statusText.textContent = `Challenge: ${content["Challenge"]}`
     statusText.style.display = "block"
 
     if (clientsTurnId) {
@@ -181,6 +179,7 @@ function onClientsTurn(content) {
         // it's our turn
         answerInput.value = ""
         challengeInputSection.style.display = "block"
+        answerInput.focus()
     } else {
         // it's not our turn
         challengeInputSection.style.display = "none"
@@ -217,9 +216,18 @@ function onTurnExpired(eliminatedClientId) {
     }
 }
 
-function onGameOver() {
-    // todo: announce the end of the game better
-    console.log('the game is over')
+function onGameOver(winningClientId) {
+    console.log(`Client [${winningClientId}] has won`)
+    let winnersName;
+    if (winningClientId === clientId) {
+        console.log("which is me! :)")
+        // we won!
+        winnersName = document.getElementById("my-display-name").value
+    } else {
+        console.log("which is not me :(")
+        winnersName = document.querySelector(`#clients-list [data-client-id="${winningClientId}"] [data-display-name]`).textContent
+    }
+    statusText.textContent = `🎉 ${winnersName} has won! 🎉`
 }
 
 function shakeElement(e, amt) {
