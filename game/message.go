@@ -14,6 +14,7 @@ const (
 	TURN_EXPIRED       = "turn_expired"       // client has run out of time
 	CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
 	GAME_OVER          = "game_over"          // the game is over
+	RESTART_GAME       = "restart_game"       // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
 	NAME_CHANGE        = "name_change"        // used by clients to indicate they want a new display name
 )
 

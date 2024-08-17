@@ -107,12 +107,16 @@ func (lobby *Lobby) StartLobby() {
 
 func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 	lobby.clients[joiningClient.Id] = joiningClient
-	lobby.aliveClients = append(lobby.aliveClients, joiningClient)
+	if lobby.Status == WAITING_FOR_PLAYERS {
+		lobby.aliveClients = append(lobby.aliveClients, joiningClient)
+	}
+
 	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: ClientJoinedContent{
 		ClientId:    joiningClient.Id,
 		DisplayName: joiningClient.DisplayName,
 		IconName:    joiningClient.IconName,
 	}})
+
 	log.Printf("[Lobby %s] Client %d connected\n", lobby.Id, joiningClient.Id)
 }
 
@@ -145,6 +149,8 @@ func (lobby *Lobby) onMessage(message Message) {
 	switch message.Type {
 	case START_GAME:
 		lobby.onStartGame()
+	case RESTART_GAME:
+		lobby.onRestartGame()
 	case ANSWER_PREVIEW:
 		lobby.onAnswerPreview(message)
 	case SUBMIT_ANSWER:
@@ -179,6 +185,20 @@ func (lobby *Lobby) onTurnExpired() {
 func (lobby *Lobby) onStartGame() {
 	if lobby.Status == WAITING_FOR_PLAYERS && len(lobby.clients) >= 2 {
 		lobby.Status = IN_PROGRESS
+		lobby.changeTurn(false)
+	}
+}
+
+func (lobby *Lobby) onRestartGame() {
+	if lobby.Status == OVER {
+		// reset alive clients to hold all clients
+		lobby.aliveClients = slices.SortedFunc(maps.Values(lobby.clients), func(c1 *Client, c2 *Client) int {
+			return c1.Id - c2.Id
+		})
+
+		lobby.Status = IN_PROGRESS
+		lobby.turnIndex = -1
+		lobby.BroadcastMessage(Message{Type: RESTART_GAME})
 		lobby.changeTurn(false)
 	}
 }

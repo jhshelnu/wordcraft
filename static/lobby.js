@@ -10,12 +10,14 @@ const ANSWER_REJECTED    = "answer_rejected"    // the answer is not accepted
 const TURN_EXPIRED       = "turn_expired"       // client has run out of time
 const CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
 const GAME_OVER          = "game_over"          // the game is over
+const RESTART_GAME       = "restart_game"       // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
 const NAME_CHANGE        = "name_change"        // used by clients to indicate they want a new display name
 
 let ws                    // the websocket connection
 let clientId              // our assigned id for the lobby we're joining
 let myDisplayNameInput    // the <input> which holds our current displayName
 let startGameButton       // the button to start the game
+let restartGameButton     // the button to restart the game
 let clientsTurnId         // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let answerInput           // the input element which holds what the user has typed so far
@@ -30,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
     ws = new WebSocket(`ws://${location.host}/ws/${lobbyId}`)
     startGameButton = document.getElementById("start-game-button")
+    restartGameButton = document.getElementById("restart-game-button")
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
     statusText = document.getElementById("status-text")
@@ -40,6 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     startGameButton.addEventListener("click", () => {
         ws.send(JSON.stringify({ Type: START_GAME }))
+    })
+
+    restartGameButton.addEventListener("click", () => {
+        ws.send(JSON.stringify({ Type: RESTART_GAME }))
     })
 
     ws.onmessage = ({ data }) => {
@@ -76,6 +83,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 break
             case GAME_OVER:
                 onGameOver(content)
+                break
+            case RESTART_GAME:
+                onRestartGame()
                 break
         }
     }
@@ -217,17 +227,22 @@ function onTurnExpired(eliminatedClientId) {
 }
 
 function onGameOver(winningClientId) {
-    console.log(`Client [${winningClientId}] has won`)
     let winnersName;
     if (winningClientId === clientId) {
-        console.log("which is me! :)")
         // we won!
         winnersName = document.getElementById("my-display-name").value
     } else {
-        console.log("which is not me :(")
         winnersName = document.querySelector(`#clients-list [data-client-id="${winningClientId}"] [data-display-name]`).textContent
     }
     statusText.textContent = `🎉 ${winnersName} has won! 🎉`
+    restartGameButton.classList.remove("hidden")
+}
+
+function onRestartGame() {
+    restartGameButton.classList.add("hidden")
+    document.querySelectorAll("#clients-list [data-client-id]").forEach(renderedClient => {
+        renderedClient.classList.remove("opacity-40")
+    })
 }
 
 function shakeElement(e, amt) {
