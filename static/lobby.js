@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     answerInput.addEventListener("input", () => {
-        let currentInput = answerInput.value
+        let currentInput = answerInput.value.toLowerCase()
         ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
     })
 
