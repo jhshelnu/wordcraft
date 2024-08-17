@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
 
     answerInput.addEventListener("keyup", e => {
-        let input = answerInput.value
+        let input = answerInput.value.toLowerCase()
         if (e.key === "Enter" && input) {
             ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
         }

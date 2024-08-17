@@ -6,6 +6,7 @@ import (
 	"github.com/jhshelnu/wordgame/words"
 	"log"
 	"maps"
+	"runtime/debug"
 	"slices"
 	"strings"
 	"sync"
@@ -84,6 +85,7 @@ func (lobby *Lobby) StartLobby() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("[Lobby %s] Encountered fatal error: %v\n", lobby.Id, r)
+			log.Printf("stack trace of error: \n%s", debug.Stack())
 		}
 	}()
 

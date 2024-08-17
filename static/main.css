@@ -1791,12 +1791,20 @@ html {
   margin-right: auto;
 }
 
+.-ml-2 {
+  margin-left: -0.5rem;
+}
+
 .-ml-3 {
   margin-left: -0.75rem;
 }
 
 .-mr-1 {
   margin-right: -0.25rem;
+}
+
+.mr-0\.5 {
+  margin-right: 0.125rem;
 }
 
 .mt-0\.5 {
@@ -1821,22 +1829,6 @@ html {
 
 .mt-4 {
   margin-top: 1rem;
-}
-
-.-ml-1 {
-  margin-left: -0.25rem;
-}
-
-.-ml-2 {
-  margin-left: -0.5rem;
-}
-
-.mr-1 {
-  margin-right: 0.25rem;
-}
-
-.mr-0\.5 {
-  margin-right: 0.125rem;
 }
 
 .block {
