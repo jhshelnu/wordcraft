@@ -84,8 +84,7 @@ func (lobby *Lobby) StartLobby() {
 	defer lobby.EndLobby()
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("[Lobby %s] Encountered fatal error: %v\n", lobby.Id, r)
-			log.Printf("stack trace of error: \n%s", debug.Stack())
+			log.Printf("[Lobby %s] Encountered fatal error: %v\n%s\n", lobby.Id, r, debug.Stack())
 		}
 	}()
 
@@ -141,7 +140,7 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 	if len(lobby.aliveClients) == 1 {
 		// only one client left, we have a winner i guess
 		lobby.Status = OVER
-		lobby.BroadcastMessage(Message{Type: GAME_OVER})
+		lobby.BroadcastMessage(Message{Type: GAME_OVER, Content: lobby.aliveClients[0].Id})
 	} else {
 		lobby.changeTurn(true)
 	}
@@ -163,6 +162,11 @@ func (lobby *Lobby) onMessage(message Message) {
 }
 
 func (lobby *Lobby) onTurnExpired() {
+	// sometimes, depending on timing, our timer can fire after the players have left
+	if lobby.Status != IN_PROGRESS {
+		return
+	}
+
 	lobby.BroadcastMessage(Message{Type: TURN_EXPIRED, Content: lobby.aliveClients[lobby.turnIndex].Id})
 	if len(lobby.aliveClients) > 2 {
 		// at least 2 clients still alive, keep the game going (lobby#changeTurn will handle dropping them)
@@ -206,16 +210,14 @@ func (lobby *Lobby) onRestartGame() {
 }
 
 func (lobby *Lobby) onNameChange(message Message) {
-	if lobby.Status == WAITING_FOR_PLAYERS {
-		newDisplayName, ok := message.Content.(string)
-		if !ok || len(newDisplayName) > MAX_DISPLAY_NAME {
-			return
-		}
-
-		client := lobby.clients[message.From]
-		client.DisplayName = newDisplayName
-		lobby.BroadcastMessage(Message{Type: NAME_CHANGE, Content: ClientNameChange{ClientId: client.Id, NewDisplayName: newDisplayName}})
+	newDisplayName, ok := message.Content.(string)
+	if !ok || len(newDisplayName) > MAX_DISPLAY_NAME {
+		return
 	}
+
+	client := lobby.clients[message.From]
+	client.DisplayName = newDisplayName
+	lobby.BroadcastMessage(Message{Type: NAME_CHANGE, Content: ClientNameChange{ClientId: client.Id, NewDisplayName: newDisplayName}})
 }
 
 func (lobby *Lobby) onAnswerPreview(message Message) {
@@ -268,7 +270,14 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 	}
 
 	lobby.currentChallenge = words.GetChallenge()
-	lobby.BroadcastMessage(Message{Type: CLIENTS_TURN, Content: ClientsTurnContent{ClientId: lobby.aliveClients[lobby.turnIndex].Id, Challenge: lobby.currentChallenge}})
+	lobby.BroadcastMessage(Message{
+		Type: CLIENTS_TURN,
+		Content: ClientsTurnContent{
+			ClientId:  lobby.aliveClients[lobby.turnIndex].Id,
+			Challenge: lobby.currentChallenge,
+			Time:      TURN_LIMIT_SECONDS,
+		},
+	})
 	lobby.turnExpired = time.After(TURN_LIMIT_SECONDS * time.Second)
 }
 

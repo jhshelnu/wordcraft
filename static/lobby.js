@@ -22,6 +22,7 @@ let clientsTurnId         // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let answerInput           // the input element which holds what the user has typed so far
 let statusText            // large text at the top of the screen displaying the current status (current challenge, who won, etc)
+let turnCountdownInterval // the interval where we count down how many seconds the user has left
 
 const VOLUME = 0.4 // how loud to play the audio
 let answerAcceptedAudio    // what plays when an answer is accepted
@@ -172,27 +173,42 @@ function onNameChange(content) {
 }
 
 function onClientsTurn(content) {
-    startGameButton.style.display = "none"
+    clearInterval(turnCountdownInterval)
+
+    if (!startGameButton.classList.contains("hidden")) {
+        startGameButton.classList.add("hidden")
+    }
 
     let newClientsTurnId = content["ClientId"]
-    statusText.textContent = `Challenge: ${content["Challenge"]}`
-    statusText.style.display = "block"
+    let time = content["Time"]
+
+    statusText.textContent = `Challenge: ${content["Challenge"]}   Time left: ${time}s`
+    statusText.classList.remove("hidden")
+    turnCountdownInterval = setInterval(() => {
+        // sometimes, depending on timing, this may fire one more time after the game is over
+        // so, don't update the status text if it's already declared a winner
+        if (time > 0 && statusText.textContent.startsWith("Challenge")) {
+            time--
+            statusText.textContent = `Challenge: ${content["Challenge"]}   Time left: ${time}s`
+        }
+    }, 1_000)
 
     if (clientsTurnId) {
-        document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`).style.visibility = "hidden"
+        let previousTurnClient = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
+        previousTurnClient.classList.add("invisible")
     }
 
     document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess]`).textContent = ""
-    document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess-pill]`).style.visibility = "visible"
+    document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess-pill]`).classList.remove("invisible")
 
     if (clientId === newClientsTurnId) {
         // it's our turn
         answerInput.value = ""
-        challengeInputSection.style.display = "block"
+        challengeInputSection.classList.remove("hidden")
         answerInput.focus()
     } else {
         // it's not our turn
-        challengeInputSection.style.display = "none"
+        challengeInputSection.classList.add("hidden")
     }
 
     clientsTurnId = newClientsTurnId
@@ -222,11 +238,13 @@ function onTurnExpired(eliminatedClientId) {
     clientEliminated.volume = VOLUME
     clientEliminated.play()
     if (eliminatedClientId === clientId) {
-        challengeInputSection.style.display = "none"
+        challengeInputSection.classList.add("hidden")
     }
 }
 
 function onGameOver(winningClientId) {
+    clearInterval(turnCountdownInterval)
+
     let winnersName;
     if (winningClientId === clientId) {
         // we won!
@@ -235,6 +253,8 @@ function onGameOver(winningClientId) {
         winnersName = document.querySelector(`#clients-list [data-client-id="${winningClientId}"] [data-display-name]`).textContent
     }
     statusText.textContent = `🎉 ${winnersName} has won! 🎉`
+
+    challengeInputSection.classList.add("hidden")
     restartGameButton.classList.remove("hidden")
 }
 

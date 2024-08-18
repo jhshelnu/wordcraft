@@ -27,6 +27,7 @@ type Message struct {
 type ClientsTurnContent struct {
 	ClientId  int    // whose turn it is
 	Challenge string // what the challenge string is, e.g. "atr"
+	Time      int    // how many seconds the user has to submit a valid answer
 }
 
 type ClientJoinedContent struct {

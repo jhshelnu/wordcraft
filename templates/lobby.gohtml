@@ -22,7 +22,7 @@
                                 ? `<input id="my-display-name" class="input card-title text-center w-44" value="${displayName}">`
                                 : `<p data-display-name class="card-title">${displayName}</p>`
                             }
-                            <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center" style="visibility: hidden">
+                            <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center invisible">
                                 <p data-current-guess class="font-bold px-3" style="color: oklch(var(--sc))"></p>
                             </div>
                         </div>
@@ -47,10 +47,10 @@
             <span class="material-symbols-outlined -ml-3 -mr-1 mt-0.5">chevron_left</span>
             Leave lobby
         </button>
-        <h2 id="status-text" class="h2 w-full text-center" style="display: none"></h2>
+        <h2 id="status-text" class="h2 w-full text-center hidden"></h2>
         <div id="clients-list" class="flex flex-row gap-4 mt-10"></div>
 
-        <div id="challenge-input-section" class="mt-14" style="display: none">
+        <div id="challenge-input-section" class="mt-14 hidden">
             <label for="answer-input"></label>
             <input id="answer-input" type="text" class="input input-accent w-50" autocapitalize="none"/>
         </div>
