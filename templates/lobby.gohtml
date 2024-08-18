@@ -55,10 +55,16 @@
             <input id="answer-input" type="text" class="input input-accent w-50" autocapitalize="none"/>
         </div>
 
-        <button id="start-game-button" class="btn btn-accent min-w-36 text-lg mt-14" disabled>Waiting for players...</button>
-        <button id="restart-game-button" class="btn btn-accent min-w-36 text-lg mt-14 hidden">
-            <span class="material-symbols-outlined -ml-2 mr-0.5 mt-1">refresh</span>
-            Restart Game
-        </button>
+        <div class="flex flex-row gap-6 mt-14">
+            <button id="start-game-button" class="btn btn-accent min-w-36 text-lg" disabled>Waiting for players...</button>
+            <button id="restart-game-button" class="btn btn-accent min-w-36 text-lg hidden">
+                <span class="material-symbols-outlined -ml-2 mr-0.5 mt-1">refresh</span>
+                Restart Game
+            </button>
+            <button id="invite-button" class="btn btn-primary">
+                <span class="material-symbols-outlined">content_copy</span>
+                <span id="invite-button-text">Copy invite link</span>
+            </button>
+        </div>
     </body>
 </html>

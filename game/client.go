@@ -35,11 +35,9 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 		write:       make(chan Message),
 	}
 
-	_ = ws.WriteJSON(Message{Type: CLIENT_ID_ASSIGNED, Content: client.Id})
-
-	lobby.join <- client
 	go client.Write()
 	go client.Read()
+	lobby.join <- client
 
 	return nil
 }

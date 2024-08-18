@@ -112,6 +112,12 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 		lobby.aliveClients = append(lobby.aliveClients, joiningClient)
 	}
 
+	// todo: send more than just the clientid, they also need to know gamestate, who's out, who's turn it is, etc
+	//       ideally we'd also send things like current player names and pictures, to prevent missing messages while connecting
+	joiningClient.write <- Message{Type: CLIENT_DETAILS, Content: ClientDetailsContent{
+		ClientId: joiningClient.Id,
+	}}
+
 	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: ClientJoinedContent{
 		ClientId:    joiningClient.Id,
 		DisplayName: joiningClient.DisplayName,
@@ -196,7 +202,7 @@ func (lobby *Lobby) onStartGame() {
 }
 
 func (lobby *Lobby) onRestartGame() {
-	if lobby.Status == OVER {
+	if lobby.Status == OVER && len(lobby.clients) >= 2 {
 		// reset alive clients to hold all clients
 		lobby.aliveClients = slices.SortedFunc(maps.Values(lobby.clients), func(c1 *Client, c2 *Client) int {
 			return c1.Id - c2.Id
@@ -204,6 +210,7 @@ func (lobby *Lobby) onRestartGame() {
 
 		lobby.Status = IN_PROGRESS
 		lobby.turnIndex = -1
+		lobby.usedWords = make(map[string]bool)
 		lobby.BroadcastMessage(Message{Type: RESTART_GAME})
 		lobby.changeTurn(false)
 	}

@@ -1,23 +1,25 @@
 // message types
-const START_GAME         = "start_game"         // the game has started
-const CLIENT_ID_ASSIGNED = "client_id_assigned" // sent to a newly connected client, indicating their id
-const CLIENT_JOINED      = "client_joined"      // a new client has joined
-const CLIENT_LEFT        = "client_left"        // a client has left
-const SUBMIT_ANSWER      = "submit_answer"      // when the client submits an answer
-const ANSWER_PREVIEW     = "answer_preview"     // preview of the current answer (not submitted) so other clients can see
-const ANSWER_ACCEPTED    = "answer_accepted"    // the answer is accepted
-const ANSWER_REJECTED    = "answer_rejected"    // the answer is not accepted
-const TURN_EXPIRED       = "turn_expired"       // client has run out of time
-const CLIENTS_TURN       = "clients_turn"       // it's a new clients turn
-const GAME_OVER          = "game_over"          // the game is over
-const RESTART_GAME       = "restart_game"       // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
-const NAME_CHANGE        = "name_change"        // used by clients to indicate they want a new display name
+const START_GAME     = "start_game"      // the game has started
+const CLIENT_DETAILS = "client_details"    // sent to a newly connected client, indicating their id
+const CLIENT_JOINED  = "client_joined"   // a new client has joined
+const CLIENT_LEFT    = "client_left"     // a client has left
+const SUBMIT_ANSWER  = "submit_answer"   // when the client submits an answer
+const ANSWER_PREVIEW = "answer_preview"  // preview of the current answer (not submitted) so other clients can see
+const ANSWER_ACCEPTED= "answer_accepted" // the answer is accepted
+const ANSWER_REJECTED= "answer_rejected" // the answer is not accepted
+const TURN_EXPIRED   = "turn_expired"    // client has run out of time
+const CLIENTS_TURN   = "clients_turn"    // it's a new clients turn
+const GAME_OVER      = "game_over"       // the game is over
+const RESTART_GAME   = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
+const NAME_CHANGE    = "name_change"     // used by clients to indicate they want a new display name
 
 let ws                    // the websocket connection
 let clientId              // our assigned id for the lobby we're joining
 let myDisplayNameInput    // the <input> which holds our current displayName
 let startGameButton       // the button to start the game
 let restartGameButton     // the button to restart the game
+let inviteButton          // the button that copies the lobby link to the clipboard
+let inviteButtonText      // the text of the invite button (changes after being clicked)
 let clientsTurnId         // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let answerInput           // the input element which holds what the user has typed so far
@@ -34,6 +36,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ws = new WebSocket(`ws://${location.host}/ws/${lobbyId}`)
     startGameButton = document.getElementById("start-game-button")
     restartGameButton = document.getElementById("restart-game-button")
+    inviteButton = document.getElementById("invite-button")
+    inviteButtonText = document.getElementById("invite-button-text")
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
     statusText = document.getElementById("status-text")
@@ -50,13 +54,18 @@ document.addEventListener("DOMContentLoaded", () => {
         ws.send(JSON.stringify({ Type: RESTART_GAME }))
     })
 
+    inviteButton.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(location.href)
+        inviteButtonText.textContent = "Copied!"
+    })
+
     ws.onmessage = ({ data }) => {
         let message = JSON.parse(data)
         let type = message["Type"]
         let content = message["Content"]
         switch (type) {
-            case CLIENT_ID_ASSIGNED:
-                clientId = content
+            case CLIENT_DETAILS:
+                onClientDetails(content)
                 break
             case CLIENT_JOINED:
                 onClientJoined(content)
@@ -103,6 +112,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     })
 })
+
+// this message is broadcast from the server to one particular client at the moment of connection
+// it's job is to catch the client up on details-- what their id is, the current state of the game, etc
+function onClientDetails(content) {
+    clientId = content["ClientId"]
+}
 
 function onClientJoined(content) {
     let newClientId = content["ClientId"]
@@ -151,6 +166,7 @@ function onClientJoined(content) {
     if (document.getElementById("clients-list").children.length >= 2) {
         startGameButton.textContent = "Start game!"
         startGameButton.removeAttribute("disabled")
+        restartGameButton.removeAttribute("disabled")
     }
 }
 
@@ -159,6 +175,7 @@ function onClientLeft(leavingClientId) {
     if (document.getElementById("clients-list").children.length < 2) {
         startGameButton.textContent = "Waiting for players..."
         startGameButton.setAttribute("disabled", "")
+        restartGameButton.setAttribute("disabled", "")
     }
 }
 
@@ -175,9 +192,8 @@ function onNameChange(content) {
 function onClientsTurn(content) {
     clearInterval(turnCountdownInterval)
 
-    if (!startGameButton.classList.contains("hidden")) {
-        startGameButton.classList.add("hidden")
-    }
+    startGameButton.classList.add("hidden")
+    inviteButton.classList.add("hidden")
 
     let newClientsTurnId = content["ClientId"]
     let time = content["Time"]
@@ -256,6 +272,8 @@ function onGameOver(winningClientId) {
 
     challengeInputSection.classList.add("hidden")
     restartGameButton.classList.remove("hidden")
+    inviteButtonText.textContent = "Copy invite link"
+    inviteButton.classList.remove("hidden")
 }
 
 function onRestartGame() {
