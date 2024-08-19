@@ -132,7 +132,6 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 	delete(lobby.clients, leavingClient.Id)
 	lobby.BroadcastMessage(Message{Type: CLIENT_LEFT, Content: leavingClient.Id})
 
-	// not very efficient, but there won't be many clients anyway
 	if lobby.Status == IN_PROGRESS {
 		aliveClients := make([]*Client, 0, len(lobby.aliveClients)-1)
 		for _, c := range lobby.aliveClients {
@@ -141,14 +140,14 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 			}
 		}
 		lobby.aliveClients = aliveClients
-	}
 
-	if len(lobby.aliveClients) == 1 {
-		// only one client left, we have a winner i guess
-		lobby.Status = OVER
-		lobby.BroadcastMessage(Message{Type: GAME_OVER, Content: lobby.aliveClients[0].Id})
-	} else {
-		lobby.changeTurn(true)
+		if len(lobby.aliveClients) == 1 {
+			// only one client left, we have a winner i guess
+			lobby.Status = OVER
+			lobby.BroadcastMessage(Message{Type: GAME_OVER, Content: lobby.aliveClients[0].Id})
+		} else {
+			lobby.changeTurn(true)
+		}
 	}
 }
 
