@@ -7,7 +7,9 @@ todo
 todo
 
 ## Local development
-todo
+`go install golang.org/x/tools/cmd/stringer@latest`
+`go generate ./...`
+`go build`
 
 ## Todo
 - fill out sections in this readme

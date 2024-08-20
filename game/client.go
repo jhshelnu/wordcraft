@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"log"
 )
 
 type Client struct {
@@ -44,11 +43,6 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 
 func (c *Client) Write() {
 	defer func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("[Lobby %s] Client %d encountered fatal error in Write goroutine: %v\n", c.Lobby.Id, c.Id, r)
-			}
-		}()
 		c.Lobby.leave <- c
 		_ = c.ws.Close()
 	}()
@@ -69,11 +63,6 @@ func (c *Client) Write() {
 
 func (c *Client) Read() {
 	defer func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("[Lobby %s] Client %d encountered fatal error in Read goroutine: %v\n", c.Lobby.Id, c.Id, r)
-			}
-		}()
 		c.Lobby.leave <- c
 		_ = c.ws.Close()
 	}()
@@ -88,4 +77,8 @@ func (c *Client) Read() {
 		message.From = c.Id
 		c.Lobby.read <- message
 	}
+}
+
+func (c *Client) String() string {
+	return fmt.Sprintf("Client[Id=%d, DisplayName='%s']", c.Id, c.DisplayName)
 }

@@ -211,7 +211,9 @@ function onClientsTurn(content) {
 
     if (clientsTurnId) {
         let previousTurnClient = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
-        previousTurnClient.classList.add("invisible")
+        if (previousTurnClient) { // can be null if the client in question left
+            previousTurnClient.classList.add("invisible")
+        }
     }
 
     document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess]`).textContent = ""

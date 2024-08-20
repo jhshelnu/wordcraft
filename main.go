@@ -28,14 +28,14 @@ func createLobby(c *gin.Context) {
 }
 
 func handleIndex(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.gohtml", gin.H{})
+	c.HTML(http.StatusOK, "home.gohtml", gin.H{})
 }
 
 // navigates the user to the page for a specific lobby
 func openLobby(c *gin.Context) {
 	lobbyId, err := uuid.Parse(c.Param("lobbyId"))
 	if err != nil {
-		c.HTML(http.StatusOK, "index.gohtml", gin.H{
+		c.HTML(http.StatusOK, "home.gohtml", gin.H{
 			"error": "Lobby not found",
 		})
 		return
@@ -43,14 +43,14 @@ func openLobby(c *gin.Context) {
 
 	lobby, exists := lobbies[lobbyId]
 	if !exists {
-		c.HTML(http.StatusOK, "index.gohtml", gin.H{
+		c.HTML(http.StatusOK, "home.gohtml", gin.H{
 			"error": "Lobby not found",
 		})
 		return
 	}
 
 	if lobby.Status == game.IN_PROGRESS {
-		c.HTML(http.StatusOK, "index.gohtml", gin.H{
+		c.HTML(http.StatusOK, "home.gohtml", gin.H{
 			"error": "This lobby has already started",
 		})
 		return
