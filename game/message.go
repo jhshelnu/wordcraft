@@ -33,7 +33,8 @@ type ClientsTurnContent struct {
 // ClientDetailsContent is broadcast from the server to one particular client at the moment of connection
 // it's job is to catch the client up on details-- what their id is, the current state of the game, etc
 type ClientDetailsContent struct {
-	ClientId int // the id assigned to this client
+	ClientId int        // the id assigned to this client
+	Status   gameStatus // the status of the game (if a client connects midgame or when the game is over, this is how they'll know)
 }
 
 // ClientJoinedContent is broadcast to all clients when a new client joins

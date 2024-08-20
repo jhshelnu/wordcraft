@@ -13,6 +13,11 @@ const GAME_OVER      = "game_over"       // the game is over
 const RESTART_GAME   = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
 const NAME_CHANGE    = "name_change"     // used by clients to indicate they want a new display name
 
+// different values for gameStatus that indicate what point we're at in the game
+const WAITING_FOR_PLAYERS = 0
+const IN_PROGRESS = 1
+const OVER = 2
+
 let ws                    // the websocket connection
 let clientId              // our assigned id for the lobby we're joining
 let myDisplayNameInput    // the <input> which holds our current displayName
@@ -117,6 +122,21 @@ document.addEventListener("DOMContentLoaded", () => {
 // it's job is to catch the client up on details-- what their id is, the current state of the game, etc
 function onClientDetails(content) {
     clientId = content["ClientId"]
+    let status = content["Status"]
+
+    switch (status) {
+        case WAITING_FOR_PLAYERS:
+            startGameButton.classList.remove("hidden")
+            inviteButton.classList.remove("hidden")
+            break
+        case IN_PROGRESS:
+            // todo
+            break
+        case OVER:
+            restartGameButton.classList.remove("hidden")
+            inviteButton.classList.remove("hidden")
+            break
+    }
 }
 
 function onClientJoined(content) {

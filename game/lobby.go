@@ -122,6 +122,7 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 	//       ideally we'd also send things like current player names and pictures, to prevent missing messages while connecting
 	joiningClient.write <- Message{Type: CLIENT_DETAILS, Content: ClientDetailsContent{
 		ClientId: joiningClient.Id,
+		Status:   lobby.Status,
 	}}
 
 	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: ClientJoinedContent{
