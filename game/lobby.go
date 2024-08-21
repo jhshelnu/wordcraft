@@ -125,7 +125,8 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 		ClientId:    joiningClient.Id,
 		DisplayName: joiningClient.DisplayName,
 		IconName:    joiningClient.IconName,
-		Alive:       lobby.Status == WaitingForPlayers, // if they join mid-game or after the game, they are dead until a restart
+		// for new clients, they are considered alive if they join mid-game or after the game
+		Alive: lobby.Status != InProgress,
 	}})
 }
 
@@ -374,7 +375,8 @@ func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent
 			Id:          c.Id,
 			DisplayName: c.DisplayName,
 			IconName:    c.IconName,
-			Alive:       lobby.Status != InProgress || isAliveMap[c],
+			// for existing clients, they are considered alive if the game hasn't started yet, or they are still alive in their current/last game
+			Alive: lobby.Status == WaitingForPlayers || isAliveMap[c],
 		})
 	}
 
