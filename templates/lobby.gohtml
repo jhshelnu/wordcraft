@@ -7,35 +7,6 @@
             function leaveLobby() {
                 location.href = "/"
             }
-
-            function renderNewClientCard(newClientId, displayName, iconName, isMe) {
-                let clientsList = document.getElementById("clients-list")
-                let template = document.createElement("template")
-                template.innerHTML = `
-                    <div data-client-id="${newClientId}" class="card card-compact bg-base-100 w-52 shadow-2xl">
-                        <img
-                            class="mask max-w-36 mx-auto"
-                            src="/static/icons/${iconName}"
-                            alt="${iconName}" />
-                        <div class="card-body items-center">
-                            ${isMe
-                                ? `<input id="my-display-name" class="input card-title text-center w-44" value="${displayName}">`
-                                : `<p data-display-name class="card-title">${displayName}</p>`
-                            }
-                            <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center invisible">
-                                <p data-current-guess class="font-bold px-3" style="color: oklch(var(--sc))"></p>
-                            </div>
-                        </div>
-                    </div>
-                `
-                clientsList.appendChild(template.content)
-            }
-
-            document.addEventListener("DOMContentLoaded", () => {
-                {{range .clients}}
-                renderNewClientCard({{.clientId}}, {{.displayName}}, {{.iconName}}, false)
-                {{end}}
-            })
         </script>
         <script src="/static/thirdparty/gsap.min.js"></script>
         <script src="/static/lobby.js"></script>

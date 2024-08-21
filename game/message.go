@@ -34,8 +34,9 @@ type ClientsTurnContent struct {
 // ClientDetailsContent is broadcast from the server to one particular client at the moment of connection
 // it's job is to catch the client up on details-- what their id is, the current state of the game, etc
 type ClientDetailsContent struct {
-	ClientId int        // the id assigned to this client
-	Status   gameStatus // the status of the game (if a client connects mid-game or when the game is over, this is how they'll know)
+	ClientId int             // the id assigned to this client
+	Status   gameStatus      // the status of the game (if a client connects mid-game or when the game is over, this is how they'll know)
+	Clients  []ClientContent // details of the existing clients in the lobby
 }
 
 // ClientJoinedContent is broadcast to all clients when a new client joins
@@ -43,9 +44,19 @@ type ClientJoinedContent struct {
 	ClientId    int    // the id of the newly joined client
 	DisplayName string // what their name is
 	IconName    string // which icon they are using
+	Alive       bool   // whether they are alive or not
 }
 
 type ClientNameChange struct {
 	ClientId       int    // who is changing their name
 	NewDisplayName string // what they are changing their name to
+}
+
+// ClientContent is not currently sent as a standalone message content, but embedded
+// within ClientDetailsContent. It represents the current state of another client in the lobby
+type ClientContent struct {
+	Id          int
+	DisplayName string
+	IconName    string
+	Alive       bool
 }

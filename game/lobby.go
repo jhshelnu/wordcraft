@@ -116,19 +116,16 @@ func (lobby *Lobby) StartLobby() {
 func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 	lobby.logger.Printf("%s connected", joiningClient)
 
+	// fill in the client on everything they missed
+	joiningClient.write <- Message{Type: ClientDetails, Content: lobby.BuildClientDetails(joiningClient.Id)}
+
+	// then add them to the lobby and broadcast that they joined to everyone (including to the new client)
 	lobby.clients[joiningClient.Id] = joiningClient
-
-	// todo: send more than just the clientid, they also need to know gamestate, who's out, who's turn it is, etc
-	//       ideally we'd also send things like current player names and pictures, to prevent missing messages while connecting
-	joiningClient.write <- Message{Type: ClientDetails, Content: ClientDetailsContent{
-		ClientId: joiningClient.Id,
-		Status:   lobby.Status,
-	}}
-
 	lobby.BroadcastMessage(Message{Type: ClientJoined, Content: ClientJoinedContent{
 		ClientId:    joiningClient.Id,
 		DisplayName: joiningClient.DisplayName,
 		IconName:    joiningClient.IconName,
+		Alive:       lobby.Status == WaitingForPlayers, // if they join mid-game or after the game, they are dead until a restart
 	}})
 }
 
@@ -159,7 +156,6 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 		}
 
 		lobby.logger.Printf("Set the status to %s because %s left, which makes %s the winner", lobby.Status, leavingClient, winningClient)
-
 		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.Id})
 		return
 	}
@@ -221,6 +217,7 @@ func (lobby *Lobby) onTurnExpired() {
 
 		// we're here because there are 2 clients remaining and one of them just had their turn expire
 		// so, the winner is the *other* one
+		losingClient := lobby.aliveClients[lobby.turnIndex]
 		var winningClient *Client
 		if lobby.turnIndex == 0 {
 			winningClient = lobby.aliveClients[1]
@@ -228,9 +225,12 @@ func (lobby *Lobby) onTurnExpired() {
 			winningClient = lobby.aliveClients[0]
 		}
 
-		lobby.logger.Printf("Set the status to %s because %s ran out of time, which makes %s the winner",
-			lobby.Status, lobby.aliveClients[lobby.turnIndex], winningClient)
+		lobby.aliveClients = []*Client{winningClient}
 
+		lobby.logger.Printf("Set the status to %s because %s ran out of time, which makes %s the winner",
+			lobby.Status, losingClient, winningClient)
+
+		lobby.BroadcastMessage(Message{Type: TurnExpired, Content: losingClient.Id})
 		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.Id})
 	}
 }
@@ -287,7 +287,7 @@ func (lobby *Lobby) onAnswerSubmitted(message Message) {
 		}
 
 		if !words.IsValidWord(answer) {
-			lobby.logger.Printf("%s submitted %s for challenge %s - rejected because it's not a word",
+			lobby.logger.Printf("%s submitted '%s' for challenge '%s' - rejected because it's not a word",
 				lobby.aliveClients[lobby.turnIndex], answer, lobby.currentChallenge)
 			lobby.BroadcastMessage(Message{Type: AnswerRejected, Content: answer})
 			return
@@ -359,9 +359,35 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 	lobby.turnExpired = time.After(TurnLimitSeconds * time.Second)
 }
 
+// BuildClientDetails is responsible for building and returning a ClientDetailsContent struct
+// which contains the current state of the lobby for a newly connected client, so they can get caught up
+func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent {
+	// todo: send more context here: who's turn it is, what they've typed, what their challenge is, who won, etc.
+	isAliveMap := make(map[*Client]bool, len(lobby.aliveClients))
+	for _, c := range lobby.aliveClients {
+		isAliveMap[c] = true
+	}
+
+	clientContents := make([]ClientContent, 0, len(lobby.clients))
+	for _, c := range lobby.clients {
+		clientContents = append(clientContents, ClientContent{
+			Id:          c.Id,
+			DisplayName: c.DisplayName,
+			IconName:    c.IconName,
+			Alive:       lobby.Status != InProgress || isAliveMap[c],
+		})
+	}
+
+	return ClientDetailsContent{
+		ClientId: joiningClientId,
+		Status:   lobby.Status,
+		Clients:  clientContents,
+	}
+}
+
 func (lobby *Lobby) BroadcastMessage(message Message) {
-	for _, client := range lobby.clients {
-		client.write <- message
+	for _, c := range lobby.clients {
+		c.write <- message
 	}
 }
 

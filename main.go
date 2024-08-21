@@ -36,12 +36,12 @@ func openLobby(c *gin.Context) {
 	lobbyId, err := uuid.Parse(c.Param("lobbyId"))
 	if err != nil {
 		c.HTML(http.StatusOK, "home.gohtml", gin.H{
-			"error": "Lobby not found",
+			"error": "Invalid lobby Id",
 		})
 		return
 	}
 
-	lobby, exists := lobbies[lobbyId]
+	_, exists := lobbies[lobbyId]
 	if !exists {
 		c.HTML(http.StatusOK, "home.gohtml", gin.H{
 			"error": "Lobby not found",
@@ -49,27 +49,7 @@ func openLobby(c *gin.Context) {
 		return
 	}
 
-	if lobby.Status == game.InProgress {
-		c.HTML(http.StatusOK, "home.gohtml", gin.H{
-			"error": "This lobby has already started",
-		})
-		return
-	}
-
-	clients := lobby.GetClients()
-	clientDetails := make([]gin.H, 0, len(clients))
-	for _, client := range clients {
-		clientDetails = append(clientDetails, gin.H{
-			"clientId":    client.Id,
-			"displayName": client.DisplayName,
-			"iconName":    client.IconName,
-		})
-	}
-
-	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{
-		"lobbyId": lobbyId,
-		"clients": clientDetails,
-	})
+	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{"lobbyId": lobbyId})
 }
 
 // once on the page for a specific lobby, the browser sends a request here to establish a WebSocket connection

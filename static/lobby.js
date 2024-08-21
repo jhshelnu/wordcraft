@@ -21,7 +21,7 @@ const IN_PROGRESS = 1
 const OVER = 2
 
 let ws                    // the websocket connection
-let clientId              // our assigned id for the lobby we're joining
+let myClientId            // our assigned id for the lobby we're joining
 let myDisplayNameInput    // the <input> which holds our current displayName
 let startGameButton       // the button to start the game
 let restartGameButton     // the button to restart the game
@@ -123,9 +123,16 @@ document.addEventListener("DOMContentLoaded", () => {
 // this message is broadcast from the server to one particular client at the moment of connection
 // it's job is to catch the client up on details-- what their id is, the current state of the game, etc
 function onClientDetails(content) {
-    clientId = content["ClientId"]
-    let status = content["Status"]
+    myClientId = content["ClientId"] // this is our assigned clientId for the rest of the lobby
+    let status = content["Status"]   // the status of the game (need to know if it's started yet or not)
+    let clients = content["Clients"] // all the clients that are already in the game
 
+    // render the clients
+    clients.forEach(client => {
+        renderNewClientCard(client["Id"], client["DisplayName"], client["IconName"], client["Alive"], false)
+    })
+
+    // then render the other buttons, etc. depending on the game state
     switch (status) {
         case WAITING_FOR_PLAYERS:
             startGameButton.classList.remove("hidden")
@@ -145,9 +152,14 @@ function onClientJoined(content) {
     let newClientId = content["ClientId"]
     let displayName = content["DisplayName"]
     let iconName    = content["IconName"]
+    let isAlive     = content["Alive"]
 
-    if (newClientId === clientId) {
-        renderNewClientCard(newClientId, displayName, iconName, true)
+    if (newClientId !== myClientId) {
+        // if the new client is not us, this is easy
+        renderNewClientCard(newClientId, displayName, iconName, isAlive, false)
+    } else {
+        // if this is us, we do have some setup to do like registering event handlers
+        renderNewClientCard(newClientId, displayName, iconName, isAlive, true)
         myDisplayNameInput = document.getElementById("my-display-name")
 
         // on change, broadcast new name to the other clients
@@ -171,15 +183,13 @@ function onClientJoined(content) {
         // on unfocus, if the name is blank, reset it to the default name
         myDisplayNameInput.addEventListener("blur", () => {
             if (!myDisplayNameInput.value) {
-                myDisplayNameInput.value = `Player ${clientId}`
+                myDisplayNameInput.value = `Player ${myClientId}`
                 ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: myDisplayNameInput.value }))
             }
         })
 
         // once joined, pre-select the text for convenience
         myDisplayNameInput.select()
-    } else {
-        renderNewClientCard(newClientId, displayName, iconName, false)
     }
 
     clientJoinedAudio.volume = VOLUME
@@ -206,9 +216,32 @@ function onNameChange(content) {
     let newDisplayName = content["NewDisplayName"]
     // for our own name change, the user has already updated the input,
     // so, only need to handle the case of other users changing their name
-    if (renamingClientId !== clientId) {
+    if (renamingClientId !== myClientId) {
         document.querySelector(`#clients-list [data-client-id="${renamingClientId}"] [data-display-name]`).textContent = newDisplayName
     }
+}
+
+function renderNewClientCard(clientId, displayName, iconName, alive, isMe) {
+    let clientsList = document.getElementById("clients-list")
+    let template = document.createElement("template")
+    template.innerHTML = `
+        <div data-client-id="${clientId}" class="card card-compact bg-base-100 w-52 shadow-2xl ${!alive ? "opacity-40" : ""}">
+            <img
+                class="mask max-w-36 mx-auto"
+                src="/static/icons/${iconName}"
+                alt="${iconName}" />
+            <div class="card-body items-center">
+                ${isMe
+                    ? `<input id="my-display-name" class="input card-title text-center w-44" value="${displayName}">`
+                    : `<p data-display-name class="card-title">${displayName}</p>`
+                }
+                <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center invisible">
+                    <p data-current-guess class="font-bold px-3" style="color: oklch(var(--sc))"></p>
+                </div>
+            </div>
+        </div>
+    `
+    clientsList.appendChild(template.content)
 }
 
 function onClientsTurn(content) {
@@ -241,7 +274,7 @@ function onClientsTurn(content) {
     document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess]`).textContent = ""
     document.querySelector(`[data-client-id="${newClientsTurnId}"] [data-current-guess-pill]`).classList.remove("invisible")
 
-    if (clientId === newClientsTurnId) {
+    if (myClientId === newClientsTurnId) {
         // it's our turn
         answerInput.value = ""
         challengeInputSection.classList.remove("hidden")
@@ -265,7 +298,7 @@ function onAnswerAccepted() {
 }
 
 function onAnswerRejected() {
-    if (clientsTurnId === clientId) {
+    if (clientsTurnId === myClientId) {
         shakeElement(answerInput, 20)
     }
 
@@ -277,7 +310,7 @@ function onTurnExpired(eliminatedClientId) {
     document.querySelector(`#clients-list [data-client-id="${eliminatedClientId}"]`).classList.add("opacity-40")
     clientEliminated.volume = VOLUME
     clientEliminated.play()
-    if (eliminatedClientId === clientId) {
+    if (eliminatedClientId === myClientId) {
         challengeInputSection.classList.add("hidden")
     }
 }
@@ -286,7 +319,7 @@ function onGameOver(winningClientId) {
     clearInterval(turnCountdownInterval)
 
     let winnersName;
-    if (winningClientId === clientId) {
+    if (winningClientId === myClientId) {
         // we won!
         winnersName = document.getElementById("my-display-name").value
     } else {
