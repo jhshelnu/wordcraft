@@ -16,17 +16,17 @@ import (
 )
 
 const (
-	TURN_LIMIT_SECONDS = 20
-	MAX_DISPLAY_NAME   = 15
+	TurnLimitSeconds = 20
+	MaxDisplayName   = 15
 )
 
 //go:generate stringer -type gameStatus
 type gameStatus int
 
 const (
-	WAITING_FOR_PLAYERS gameStatus = iota
-	IN_PROGRESS
-	OVER
+	WaitingForPlayers gameStatus = iota
+	InProgress
+	Over
 )
 
 type Lobby struct {
@@ -64,7 +64,7 @@ func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
 		leave:     make(chan *Client),
 		read:      make(chan Message),
 		iconNames: icons.GetShuffledIconNames(),
-		Status:    WAITING_FOR_PLAYERS,
+		Status:    WaitingForPlayers,
 		clients:   make(map[int]*Client),
 		turnIndex: -1,
 		lobbyOver: lobbyOver,
@@ -120,12 +120,12 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 
 	// todo: send more than just the clientid, they also need to know gamestate, who's out, who's turn it is, etc
 	//       ideally we'd also send things like current player names and pictures, to prevent missing messages while connecting
-	joiningClient.write <- Message{Type: CLIENT_DETAILS, Content: ClientDetailsContent{
+	joiningClient.write <- Message{Type: ClientDetails, Content: ClientDetailsContent{
 		ClientId: joiningClient.Id,
 		Status:   lobby.Status,
 	}}
 
-	lobby.BroadcastMessage(Message{Type: CLIENT_JOINED, Content: ClientJoinedContent{
+	lobby.BroadcastMessage(Message{Type: ClientJoined, Content: ClientJoinedContent{
 		ClientId:    joiningClient.Id,
 		DisplayName: joiningClient.DisplayName,
 		IconName:    joiningClient.IconName,
@@ -136,18 +136,18 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 	lobby.logger.Printf("%s disconnected", leavingClient)
 
 	delete(lobby.clients, leavingClient.Id)
-	lobby.BroadcastMessage(Message{Type: CLIENT_LEFT, Content: leavingClient.Id})
+	lobby.BroadcastMessage(Message{Type: ClientLeft, Content: leavingClient.Id})
 
 	// the rest of the code in here is concerned with leaving aliveClients in a consistent state
 	// if the game isn't currently in progress or the leaving client is already eliminated, then there is nothing left to do
-	if lobby.Status != IN_PROGRESS || !slices.Contains(lobby.aliveClients, leavingClient) {
+	if lobby.Status != InProgress || !slices.Contains(lobby.aliveClients, leavingClient) {
 		return
 	}
 
 	// handle game end based on leaving
 	if len(lobby.aliveClients) == 2 {
 		// only one client alive, we have a winner
-		lobby.Status = OVER
+		lobby.Status = Over
 
 		// we're here because there are 2 clients remaining and one of them just left
 		// so, the winner is the *other* one
@@ -160,7 +160,7 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 
 		lobby.logger.Printf("Set the status to %s because %s left, which makes %s the winner", lobby.Status, leavingClient, winningClient)
 
-		lobby.BroadcastMessage(Message{Type: GAME_OVER, Content: winningClient.Id})
+		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.Id})
 		return
 	}
 
@@ -189,15 +189,15 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 
 func (lobby *Lobby) onMessage(message Message) {
 	switch message.Type {
-	case START_GAME:
+	case StartGame:
 		lobby.onStartGame(message)
-	case RESTART_GAME:
+	case RestartGame:
 		lobby.onRestartGame(message)
-	case ANSWER_PREVIEW:
+	case AnswerPreview:
 		lobby.onAnswerPreview(message)
-	case SUBMIT_ANSWER:
+	case SubmitAnswer:
 		lobby.onAnswerSubmitted(message)
-	case NAME_CHANGE:
+	case NameChange:
 		lobby.onNameChange(message)
 	default:
 		lobby.logger.Printf("Received message with type %s. Ignoring due to no handler function", message.Type)
@@ -206,18 +206,18 @@ func (lobby *Lobby) onMessage(message Message) {
 
 func (lobby *Lobby) onTurnExpired() {
 	// sometimes, depending on timing, our timer can fire after the players have left
-	if lobby.Status != IN_PROGRESS {
-		lobby.logger.Printf("Ignoring %s message because lobby is in %s status", TURN_EXPIRED, lobby.Status)
+	if lobby.Status != InProgress {
+		lobby.logger.Printf("Ignoring %s message because lobby is in %s status", TurnExpired, lobby.Status)
 		return
 	}
 
-	lobby.BroadcastMessage(Message{Type: TURN_EXPIRED, Content: lobby.aliveClients[lobby.turnIndex].Id})
+	lobby.BroadcastMessage(Message{Type: TurnExpired, Content: lobby.aliveClients[lobby.turnIndex].Id})
 	if len(lobby.aliveClients) > 2 {
 		// at least 2 clients still alive, keep the game going (lobby#changeTurn will handle dropping them)
 		lobby.changeTurn(true)
 	} else {
 		// only one client alive, we have a winner
-		lobby.Status = OVER
+		lobby.Status = Over
 
 		// we're here because there are 2 clients remaining and one of them just had their turn expire
 		// so, the winner is the *other* one
@@ -231,26 +231,26 @@ func (lobby *Lobby) onTurnExpired() {
 		lobby.logger.Printf("Set the status to %s because %s ran out of time, which makes %s the winner",
 			lobby.Status, lobby.aliveClients[lobby.turnIndex], winningClient)
 
-		lobby.BroadcastMessage(Message{Type: GAME_OVER, Content: winningClient.Id})
+		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.Id})
 	}
 }
 
 func (lobby *Lobby) onStartGame(message Message) {
-	if lobby.Status == WAITING_FOR_PLAYERS && len(lobby.clients) >= 2 {
+	if lobby.Status == WaitingForPlayers && len(lobby.clients) >= 2 {
 		lobby.logger.Printf("%s has started the game", lobby.clients[message.From])
-		lobby.Status = IN_PROGRESS
+		lobby.Status = InProgress
 		lobby.resetAliveClients()
 		lobby.changeTurn(false)
 	}
 }
 
 func (lobby *Lobby) onRestartGame(message Message) {
-	if lobby.Status == OVER && len(lobby.clients) >= 2 {
+	if lobby.Status == Over && len(lobby.clients) >= 2 {
 		lobby.logger.Printf("%s has restarted the game", lobby.clients[message.From])
 		lobby.resetAliveClients()
-		lobby.Status = IN_PROGRESS
+		lobby.Status = InProgress
 		lobby.turnIndex = -1
-		lobby.BroadcastMessage(Message{Type: RESTART_GAME})
+		lobby.BroadcastMessage(Message{Type: RestartGame})
 		lobby.changeTurn(false)
 	}
 }
@@ -264,23 +264,23 @@ func (lobby *Lobby) resetAliveClients() {
 
 func (lobby *Lobby) onNameChange(message Message) {
 	newDisplayName, ok := message.Content.(string)
-	if !ok || len(newDisplayName) > MAX_DISPLAY_NAME {
+	if !ok || len(newDisplayName) > MaxDisplayName {
 		return
 	}
 
 	client := lobby.clients[message.From]
 	client.DisplayName = newDisplayName
-	lobby.BroadcastMessage(Message{Type: NAME_CHANGE, Content: ClientNameChange{ClientId: client.Id, NewDisplayName: newDisplayName}})
+	lobby.BroadcastMessage(Message{Type: NameChange, Content: ClientNameChange{ClientId: client.Id, NewDisplayName: newDisplayName}})
 }
 
 func (lobby *Lobby) onAnswerPreview(message Message) {
-	if lobby.Status == IN_PROGRESS && message.From == lobby.aliveClients[lobby.turnIndex].Id {
+	if lobby.Status == InProgress && message.From == lobby.aliveClients[lobby.turnIndex].Id {
 		lobby.BroadcastMessage(message)
 	}
 }
 
 func (lobby *Lobby) onAnswerSubmitted(message Message) {
-	if lobby.Status == IN_PROGRESS && message.From == lobby.aliveClients[lobby.turnIndex].Id {
+	if lobby.Status == InProgress && message.From == lobby.aliveClients[lobby.turnIndex].Id {
 		answer, ok := message.Content.(string)
 		if !ok {
 			return
@@ -289,26 +289,26 @@ func (lobby *Lobby) onAnswerSubmitted(message Message) {
 		if !words.IsValidWord(answer) {
 			lobby.logger.Printf("%s submitted %s for challenge %s - rejected because it's not a word",
 				lobby.aliveClients[lobby.turnIndex], answer, lobby.currentChallenge)
-			lobby.BroadcastMessage(Message{Type: ANSWER_REJECTED, Content: answer})
+			lobby.BroadcastMessage(Message{Type: AnswerRejected, Content: answer})
 			return
 		}
 
 		if answer == lobby.currentChallenge {
 			lobby.logger.Printf("%s submitted %s for challenge %s - rejected because it's the same as the challenge",
 				lobby.aliveClients[lobby.turnIndex], answer, lobby.currentChallenge)
-			lobby.BroadcastMessage(Message{Type: ANSWER_REJECTED, Content: answer})
+			lobby.BroadcastMessage(Message{Type: AnswerRejected, Content: answer})
 			return
 		}
 
 		if !strings.Contains(answer, lobby.currentChallenge) {
 			lobby.logger.Printf("%s submitted %s for challenge %s - rejected because it does not contain the challenge",
 				lobby.aliveClients[lobby.turnIndex], answer, lobby.currentChallenge)
-			lobby.BroadcastMessage(Message{Type: ANSWER_REJECTED, Content: answer})
+			lobby.BroadcastMessage(Message{Type: AnswerRejected, Content: answer})
 			return
 		}
 
 		lobby.logger.Printf("%s submitted %s for challenge %s - accepted", lobby.aliveClients[lobby.turnIndex], answer, lobby.currentChallenge)
-		lobby.BroadcastMessage(Message{Type: ANSWER_ACCEPTED, Content: answer})
+		lobby.BroadcastMessage(Message{Type: AnswerAccepted, Content: answer})
 		lobby.changeTurn(false)
 	}
 }
@@ -349,14 +349,14 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 
 	lobby.currentChallenge = words.GetChallenge()
 	lobby.BroadcastMessage(Message{
-		Type: CLIENTS_TURN,
+		Type: ClientsTurn,
 		Content: ClientsTurnContent{
 			ClientId:  lobby.aliveClients[lobby.turnIndex].Id,
 			Challenge: lobby.currentChallenge,
-			Time:      TURN_LIMIT_SECONDS,
+			Time:      TurnLimitSeconds,
 		},
 	})
-	lobby.turnExpired = time.After(TURN_LIMIT_SECONDS * time.Second)
+	lobby.turnExpired = time.After(TurnLimitSeconds * time.Second)
 }
 
 func (lobby *Lobby) BroadcastMessage(message Message) {

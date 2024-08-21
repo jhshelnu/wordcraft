@@ -1,3 +1,5 @@
+// noinspection JSUnresolvedReference - GoLand doesn't recognize global objects declared in other script files like gsap
+
 // message types
 const START_GAME     = "start_game"      // the game has started
 const CLIENT_DETAILS = "client_details"    // sent to a newly connected client, indicating their id
@@ -28,7 +30,7 @@ let inviteButtonText      // the text of the invite button (changes after being 
 let clientsTurnId         // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let answerInput           // the input element which holds what the user has typed so far
-let statusText            // large text at the top of the screen displaying the current status (current challenge, who won, etc)
+let statusText            // large text at the top of the screen displaying the current status (current challenge, who won, etc.)
 let turnCountdownInterval // the interval where we count down how many seconds the user has left
 
 const VOLUME = 0.4 // how loud to play the audio

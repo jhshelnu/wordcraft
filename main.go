@@ -49,7 +49,7 @@ func openLobby(c *gin.Context) {
 		return
 	}
 
-	if lobby.Status == game.IN_PROGRESS {
+	if lobby.Status == game.InProgress {
 		c.HTML(http.StatusOK, "home.gohtml", gin.H{
 			"error": "This lobby has already started",
 		})
