@@ -2,7 +2,7 @@
 
 // message types
 const START_GAME     = "start_game"      // the game has started
-const CLIENT_DETAILS = "client_details"    // sent to a newly connected client, indicating their id
+const CLIENT_DETAILS = "client_details"  // sent to a newly connected client, indicating their id
 const CLIENT_JOINED  = "client_joined"   // a new client has joined
 const CLIENT_LEFT    = "client_left"     // a client has left
 const SUBMIT_ANSWER  = "submit_answer"   // when the client submits an answer
@@ -126,6 +126,9 @@ function onClientDetails(content) {
     myClientId = content["ClientId"] // this is our assigned clientId for the rest of the lobby
     let status = content["Status"]   // the status of the game (need to know if it's started yet or not)
     let clients = content["Clients"] // all the clients that are already in the game
+    let currentTurnId = content["CurrentTurnId"] // the id of the client whose turn it is (or 0 if not applicable)
+    let currentChallenge = content["CurrentChallenge"] // what the current challenge is, or "" if there isn't one
+    let turnEndTimestamp = content["TurnEnd"] // UTC // the timestamp in UTC for when the current turn expires
 
     // render the clients
     clients.forEach(client => {
@@ -139,7 +142,15 @@ function onClientDetails(content) {
             inviteButton.classList.remove("hidden")
             break
         case IN_PROGRESS:
-            // todo
+            if (currentTurnId) {
+                document.querySelector(`[data-client-id="${currentTurnId}"] [data-current-guess]`).textContent = ""
+                document.querySelector(`[data-client-id="${currentTurnId}"] [data-current-guess-pill]`).classList.remove("invisible")
+                clientsTurnId = currentTurnId
+            }
+
+            if (currentChallenge && turnEndTimestamp) {
+                countDownTurn(currentChallenge, turnEndTimestamp)
+            }
             break
         case OVER:
             restartGameButton.classList.remove("hidden")
@@ -251,18 +262,10 @@ function onClientsTurn(content) {
     inviteButton.classList.add("hidden")
 
     let newClientsTurnId = content["ClientId"]
-    let time = content["Time"]
+    let turnEndTimestamp = content["TurnEnd"] // UTC
+    let currentChallenge = content["Challenge"]
 
-    statusText.textContent = `Challenge: ${content["Challenge"]}   Time left: ${time}s`
-    statusText.classList.remove("hidden")
-    turnCountdownInterval = setInterval(() => {
-        // sometimes, depending on timing, this may fire one more time after the game is over
-        // so, don't update the status text if it's already declared a winner
-        if (time > 0 && statusText.textContent.startsWith("Challenge")) {
-            time--
-            statusText.textContent = `Challenge: ${content["Challenge"]}   Time left: ${time}s`
-        }
-    }, 1_000)
+    countDownTurn(currentChallenge, turnEndTimestamp)
 
     if (clientsTurnId) {
         let previousTurnClient = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
@@ -285,6 +288,26 @@ function onClientsTurn(content) {
     }
 
     clientsTurnId = newClientsTurnId
+}
+
+function countDownTurn(currentChallenge, turnEndTimestamp) {
+    statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEndTimestamp)}s`
+    statusText.classList.remove("hidden")
+    turnCountdownInterval = setInterval(() => {
+        // sometimes, depending on timing, this may fire one more time after the game is over
+        // so, don't update the status text if it's already declared a winner
+        if (statusText.textContent.startsWith("Challenge")) {
+            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEndTimestamp)}s`
+        } else {
+            clearInterval(turnCountdownInterval)
+        }
+    }, 1_000)
+}
+
+// returns the seconds until a given UTC timestamp, or 0 if the timestamp has already passed
+function getSecondsUntil(utcTimestamp) {
+    let secondsUntilTurnExpires = (new Date(utcTimestamp) - new Date()) / 1_000
+    return Math.max(Math.floor(secondsUntilTurnExpires), 0)
 }
 
 function onAnswerPreview(answerPreview) {
