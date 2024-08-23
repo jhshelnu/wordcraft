@@ -41,14 +41,15 @@ type Lobby struct {
 	iconNames []string // a slice of icon file names (shuffled for each lobby)
 
 	// todo: consider refactoring these fields into a game state struct for better code separation
-	clients          map[int]*Client  // all clients in the lobby, indexed by their id
-	aliveClients     []*Client        // all clients in the lobby who are not out
-	status           gameStatus       // the status of the game, indicates if its started, in progress, etc
-	turnIndex        int              // the index in aliveClients of whose turn it is
-	currentChallenge string           // the current challenge string for clientsTurn
-	currentTurnEnd   string           // the timestamp in UTC of when the current turn will expire
-	turnExpired      <-chan time.Time // a (read-only) channel which produces a single boolean value once the client has run out of time
-	winnersName      string           // the name of the winning client (captured at the moment they won) this is for new clients joining after the game
+	clients           map[int]*Client  // all clients in the lobby, indexed by their id
+	aliveClients      []*Client        // all clients in the lobby who are not out
+	status            gameStatus       // the status of the game, indicates if its started, in progress, etc
+	turnIndex         int              // the index in aliveClients of whose turn it is
+	currentChallenge  string           // the current challenge string for clientsTurn
+	currentAnswerPrev string           // preview of what the client whose turn it is has typed so far
+	currentTurnEnd    string           // the timestamp in UTC of when the current turn will expire
+	turnExpired       <-chan time.Time // a (read-only) channel which produces a single boolean value once the client has run out of time
+	winnersName       string           // the name of the winning client (captured at the moment they won) this is for new clients joining after the game
 
 	lastClientId  int        // the id of the last client which connected (used to increment Client.Id's as they join the lobby)
 	clientIdMutex sync.Mutex // enforces thread-safe access to the nextClientId
@@ -277,7 +278,11 @@ func (lobby *Lobby) onNameChange(message Message) {
 
 func (lobby *Lobby) onAnswerPreview(message Message) {
 	if lobby.status == InProgress && message.From == lobby.aliveClients[lobby.turnIndex].Id {
-		lobby.BroadcastMessage(message)
+		currentAnswerPrev, ok := message.Content.(string)
+		if ok {
+			lobby.currentAnswerPrev = currentAnswerPrev
+			lobby.BroadcastMessage(Message{Type: AnswerPreview, Content: lobby.currentAnswerPrev})
+		}
 	}
 }
 
@@ -375,7 +380,6 @@ func (lobby *Lobby) BuildTurnEndTimeStamp(afterSeconds int) string {
 // BuildClientDetails is responsible for building and returning a ClientDetailsContent struct
 // which contains the current state of the lobby for a newly connected client, so they can get caught up
 func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent {
-	// todo: send more context here: what they've typed, etc.
 	isAliveMap := make(map[*Client]bool, len(lobby.aliveClients))
 	for _, c := range lobby.aliveClients {
 		isAliveMap[c] = true
@@ -397,20 +401,21 @@ func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent
 	}
 
 	var currentTurnId int
-	if lobby.status != WaitingForPlayers {
+	if lobby.status == InProgress {
 		currentTurnId = lobby.aliveClients[lobby.turnIndex].Id
 	} else {
 		currentTurnId = 0
 	}
 
 	return ClientDetailsContent{
-		ClientId:         joiningClientId,
-		Status:           lobby.status,
-		Clients:          clientContents,
-		CurrentTurnId:    currentTurnId,
-		CurrentChallenge: lobby.currentChallenge,
-		TurnEnd:          lobby.currentTurnEnd,
-		WinnersName:      lobby.winnersName,
+		ClientId:          joiningClientId,
+		Status:            lobby.status,
+		Clients:           clientContents,
+		CurrentTurnId:     currentTurnId,
+		CurrentChallenge:  lobby.currentChallenge,
+		CurrentAnswerPrev: lobby.currentAnswerPrev,
+		TurnEnd:           lobby.currentTurnEnd,
+		WinnersName:       lobby.winnersName,
 	}
 }
 

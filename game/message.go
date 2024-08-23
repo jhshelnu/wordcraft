@@ -34,13 +34,14 @@ type ClientsTurnContent struct {
 // ClientDetailsContent is broadcast from the server to one particular client at the moment of connection
 // it's job is to catch the client up on details-- what their id is, the current state of the game, etc
 type ClientDetailsContent struct {
-	ClientId         int             // the id assigned to this client
-	Status           gameStatus      // the status of the game (if a client connects mid-game or when the game is over, this is how they'll know)
-	Clients          []ClientContent // details of the existing clients in the lobby
-	CurrentTurnId    int             // the id of the client whose turn it is (or 0 if not applicable)
-	CurrentChallenge string          // what the current challenge is, or "" if there isn't one
-	TurnEnd          string          // timestamp string of when the current turn expires in UTC, or "" if not applicable
-	WinnersName      string          // name of the client who won (at the moment of winning), or "" if not applicable
+	ClientId          int             // the id assigned to this client
+	Status            gameStatus      // the status of the game (if a client connects mid-game or when the game is over, this is how they'll know)
+	Clients           []ClientContent // details of the existing clients in the lobby
+	CurrentTurnId     int             // the id of the client whose turn it is (or 0 if not applicable)
+	CurrentChallenge  string          // what the current challenge is, or "" if there isn't one
+	CurrentAnswerPrev string          // what the client whose turn it is currently has typed in
+	TurnEnd           string          // timestamp string of when the current turn expires in UTC, or "" if not applicable
+	WinnersName       string          // name of the client who won (at the moment of winning), or "" if not applicable
 }
 
 // ClientJoinedContent is broadcast to all clients when a new client joins

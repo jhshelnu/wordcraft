@@ -121,13 +121,14 @@ document.addEventListener("DOMContentLoaded", () => {
 })
 
 // this message is broadcast from the server to one particular client at the moment of connection
-// it's job is to catch the client up on details-- what their id is, the current state of the game, etc
+// its job is to catch the client up on details-- what their id is, the current state of the game, etc
 function onClientDetails(content) {
     myClientId = content["ClientId"] // this is our assigned clientId for the rest of the lobby
     let status = content["Status"]   // the status of the game (need to know if it's started yet or not)
     let clients = content["Clients"] // all the clients that are already in the game
     let currentTurnId = content["CurrentTurnId"] // the id of the client whose turn it is (or 0 if not applicable)
     let currentChallenge = content["CurrentChallenge"] // what the current challenge is, or "" if there isn't one
+    let currentAnswerPrev = content["CurrentAnswerPrev"] // what the client whose turn it is currently has typed in
     let turnEndTimestamp = content["TurnEnd"] // the timestamp in UTC for when the current turn expires
     let winnersName = content["WinnersName"] // name of the client who won (at the moment of winning), or "" if not applicable
 
@@ -144,7 +145,7 @@ function onClientDetails(content) {
             break
         case IN_PROGRESS:
             if (currentTurnId) {
-                document.querySelector(`[data-client-id="${currentTurnId}"] [data-current-guess]`).textContent = ""
+                document.querySelector(`[data-client-id="${currentTurnId}"] [data-current-guess]`).textContent = currentAnswerPrev
                 document.querySelector(`[data-client-id="${currentTurnId}"] [data-current-guess-pill]`).classList.remove("invisible")
                 clientsTurnId = currentTurnId
             }
@@ -156,6 +157,7 @@ function onClientDetails(content) {
         case OVER:
             statusText.textContent = `🎉 ${winnersName} has won! 🎉`
             statusText.classList.remove("hidden")
+
             restartGameButton.classList.remove("hidden")
             inviteButton.classList.remove("hidden")
             break
@@ -344,7 +346,10 @@ function onTurnExpired(eliminatedClientId) {
 function onGameOver(winningClientId) {
     clearInterval(turnCountdownInterval)
 
-    let winnersName;
+    document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess]`).textContent = ""
+    document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`).classList.add("invisible")
+
+    let winnersName
     if (winningClientId === myClientId) {
         // we won!
         winnersName = document.getElementById("my-display-name").value
