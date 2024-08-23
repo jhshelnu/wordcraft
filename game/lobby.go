@@ -48,6 +48,7 @@ type Lobby struct {
 	currentChallenge string           // the current challenge string for clientsTurn
 	currentTurnEnd   string           // the timestamp in UTC of when the current turn will expire
 	turnExpired      <-chan time.Time // a (read-only) channel which produces a single boolean value once the client has run out of time
+	winnersName      string           // the name of the winning client (captured at the moment they won) this is for new clients joining after the game
 
 	lastClientId  int        // the id of the last client which connected (used to increment Client.Id's as they join the lobby)
 	clientIdMutex sync.Mutex // enforces thread-safe access to the nextClientId
@@ -83,10 +84,6 @@ func (lobby *Lobby) GetNextClientId() int {
 
 func (lobby *Lobby) GetDefaultIconName(id int) string {
 	return lobby.iconNames[(id-1)%len(lobby.iconNames)]
-}
-
-func (lobby *Lobby) GetClients() []*Client {
-	return slices.SortedFunc(maps.Values(lobby.clients), func(client1 *Client, client2 *Client) int { return client1.Id - client2.Id })
 }
 
 func (lobby *Lobby) StartLobby() {
@@ -158,6 +155,7 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 			winningClient = lobby.aliveClients[0]
 		}
 
+		lobby.winnersName = winningClient.DisplayName
 		lobby.logger.Printf("Set the status to %s because %s left, which makes %s the winner", lobby.status, leavingClient, winningClient)
 		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.Id})
 		return
@@ -229,6 +227,7 @@ func (lobby *Lobby) onTurnExpired() {
 		}
 
 		lobby.aliveClients = []*Client{winningClient}
+		lobby.winnersName = winningClient.DisplayName
 
 		lobby.logger.Printf("Set the status to %s because %s ran out of time, which makes %s the winner",
 			lobby.status, losingClient, winningClient)
@@ -376,14 +375,18 @@ func (lobby *Lobby) BuildTurnEndTimeStamp(afterSeconds int) string {
 // BuildClientDetails is responsible for building and returning a ClientDetailsContent struct
 // which contains the current state of the lobby for a newly connected client, so they can get caught up
 func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent {
-	// todo: send more context here: what they've typed, who won, etc.
+	// todo: send more context here: what they've typed, etc.
 	isAliveMap := make(map[*Client]bool, len(lobby.aliveClients))
 	for _, c := range lobby.aliveClients {
 		isAliveMap[c] = true
 	}
 
+	// sorted slice of clients (ensures ordering of clients is consistent for all players)
+	clients := slices.SortedFunc(maps.Values(lobby.clients), func(c1, c2 *Client) int {
+		return c1.Id - c2.Id
+	})
 	clientContents := make([]ClientContent, 0, len(lobby.clients))
-	for _, c := range lobby.clients {
+	for _, c := range clients {
 		clientContents = append(clientContents, ClientContent{
 			Id:          c.Id,
 			DisplayName: c.DisplayName,
@@ -407,6 +410,7 @@ func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent
 		CurrentTurnId:    currentTurnId,
 		CurrentChallenge: lobby.currentChallenge,
 		TurnEnd:          lobby.currentTurnEnd,
+		WinnersName:      lobby.winnersName,
 	}
 }
 

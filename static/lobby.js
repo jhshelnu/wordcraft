@@ -128,7 +128,8 @@ function onClientDetails(content) {
     let clients = content["Clients"] // all the clients that are already in the game
     let currentTurnId = content["CurrentTurnId"] // the id of the client whose turn it is (or 0 if not applicable)
     let currentChallenge = content["CurrentChallenge"] // what the current challenge is, or "" if there isn't one
-    let turnEndTimestamp = content["TurnEnd"] // UTC // the timestamp in UTC for when the current turn expires
+    let turnEndTimestamp = content["TurnEnd"] // the timestamp in UTC for when the current turn expires
+    let winnersName = content["WinnersName"] // name of the client who won (at the moment of winning), or "" if not applicable
 
     // render the clients
     clients.forEach(client => {
@@ -153,6 +154,8 @@ function onClientDetails(content) {
             }
             break
         case OVER:
+            statusText.textContent = `🎉 ${winnersName} has won! 🎉`
+            statusText.classList.remove("hidden")
             restartGameButton.classList.remove("hidden")
             inviteButton.classList.remove("hidden")
             break

@@ -40,6 +40,7 @@ type ClientDetailsContent struct {
 	CurrentTurnId    int             // the id of the client whose turn it is (or 0 if not applicable)
 	CurrentChallenge string          // what the current challenge is, or "" if there isn't one
 	TurnEnd          string          // timestamp string of when the current turn expires in UTC, or "" if not applicable
+	WinnersName      string          // name of the client who won (at the moment of winning), or "" if not applicable
 }
 
 // ClientJoinedContent is broadcast to all clients when a new client joins
