@@ -13,7 +13,7 @@ type Client struct {
 	Lobby        *Lobby          // holds a reference to the Lobby that the client is in
 	ws           *websocket.Conn // holds a reference to the WebSocket connection
 	write        chan Message    // a write channel used by the Lobby to pass messages that the client should transmit over the websocket
-	disconnected chan any        // a channel used by the client's read and write goroutines to synchronize disconnects
+	disconnected chan bool       // a channel used by the client's Read and Write goroutines to synchronize disconnects
 }
 
 func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
@@ -33,7 +33,7 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 		Lobby:        lobby,
 		ws:           ws,
 		write:        make(chan Message),
-		disconnected: make(chan any),
+		disconnected: make(chan bool),
 	}
 
 	go client.Write()
