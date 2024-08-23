@@ -131,6 +131,12 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 }
 
 func (lobby *Lobby) onClientLeave(leavingClient *Client) {
+	// clients are really two goroutines (for reading and writing) which will both announce their exit to the server
+	// so, need to prevent firing duplicate messages when they leave
+	if _, exists := lobby.clients[leavingClient.Id]; !exists {
+		return
+	}
+
 	lobby.logger.Printf("%s disconnected", leavingClient)
 
 	delete(lobby.clients, leavingClient.Id)
