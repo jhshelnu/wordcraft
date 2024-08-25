@@ -40,7 +40,8 @@ let clientEliminated       // what plays when time runs out for a client
 
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
-    ws = new WebSocket(`ws://${location.host}/ws/${lobbyId}`)
+    const protocol = isProd ? "wss" : "ws"
+    ws = new WebSocket(`${protocol}://${location.host}/ws/${lobbyId}`)
     startGameButton = document.getElementById("start-game-button")
     restartGameButton = document.getElementById("restart-game-button")
     inviteButton = document.getElementById("invite-button")

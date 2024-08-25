@@ -10,7 +10,10 @@ import (
 	"github.com/jhshelnu/wordgame/words"
 	"log"
 	"net/http"
+	"os"
 )
+
+var isProd = os.Getenv("PROD") != ""
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -49,7 +52,7 @@ func openLobby(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{"lobbyId": lobbyId})
+	c.HTML(http.StatusOK, "lobby.gohtml", gin.H{"lobbyId": lobbyId, "isProd": isProd})
 }
 
 // once on the page for a specific lobby, the browser sends a request here to establish a WebSocket connection
@@ -100,6 +103,9 @@ func main() {
 
 	go handleEndedLobbies()
 
+	if isProd {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	server := gin.New()
 
 	// Static assets
