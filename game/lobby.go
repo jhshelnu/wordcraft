@@ -51,7 +51,7 @@ type Lobby struct {
 	turnExpired       <-chan time.Time // a (read-only) channel which produces a single boolean value once the client has run out of time
 	winnersName       string           // the name of the winning client (captured at the moment they won) this is for new clients joining after the game
 
-	lastClientId  int        // the id of the last client which connected (used to increment Client.Id's as they join the lobby)
+	lastClientId  int        // the id of the last client which connected (used to increment Client.id's as they join the lobby)
 	clientIdMutex sync.Mutex // enforces thread-safe access to the nextClientId
 
 	lobbyOver chan uuid.UUID // channel that lets this lobby notify the main thread that this lobby has completed. This allows the Lobby to get GC'ed
@@ -117,14 +117,14 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 	lobby.logger.Printf("%s connected", joiningClient)
 
 	// fill in the client on everything they missed
-	joiningClient.write <- Message{Type: ClientDetails, Content: lobby.BuildClientDetails(joiningClient.Id)}
+	joiningClient.write <- Message{Type: ClientDetails, Content: lobby.BuildClientDetails(joiningClient.id)}
 
 	// then add them to the lobby and broadcast that they joined to everyone (including to the new client)
-	lobby.clients[joiningClient.Id] = joiningClient
+	lobby.clients[joiningClient.id] = joiningClient
 	lobby.BroadcastMessage(Message{Type: ClientJoined, Content: ClientJoinedContent{
-		ClientId:    joiningClient.Id,
-		DisplayName: joiningClient.DisplayName,
-		IconName:    joiningClient.IconName,
+		ClientId:    joiningClient.id,
+		DisplayName: joiningClient.displayName,
+		IconName:    joiningClient.iconName,
 		// for new clients, they are considered alive if they join mid-game or after the game
 		Alive: lobby.status != InProgress,
 	}})
@@ -133,14 +133,14 @@ func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 	// clients are really two goroutines (for reading and writing) which will both announce their exit to the server
 	// so, need to prevent firing duplicate messages when they leave
-	if _, exists := lobby.clients[leavingClient.Id]; !exists {
+	if _, exists := lobby.clients[leavingClient.id]; !exists {
 		return
 	}
 
 	lobby.logger.Printf("%s disconnected", leavingClient)
 
-	delete(lobby.clients, leavingClient.Id)
-	lobby.BroadcastMessage(Message{Type: ClientLeft, Content: leavingClient.Id})
+	delete(lobby.clients, leavingClient.id)
+	lobby.BroadcastMessage(Message{Type: ClientLeft, Content: leavingClient.id})
 
 	// the rest of the code in here is concerned with leaving aliveClients in a consistent state
 	// if the game isn't currently in progress or the leaving client is already eliminated, then there is nothing left to do
@@ -162,9 +162,9 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 			winningClient = lobby.aliveClients[0]
 		}
 
-		lobby.winnersName = winningClient.DisplayName
+		lobby.winnersName = winningClient.displayName
 		lobby.logger.Printf("Set the status to %s because %s left, which makes %s the winner", lobby.status, leavingClient, winningClient)
-		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.Id})
+		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.id})
 		return
 	}
 
@@ -179,7 +179,7 @@ func (lobby *Lobby) onClientLeave(leavingClient *Client) {
 	// if it's not their turn, no need to change the turn. can go ahead and remove them from aliveClients
 	aliveClients := make([]*Client, 0, len(lobby.aliveClients)-1)
 	for _, c := range lobby.aliveClients {
-		if c.Id != leavingClient.Id {
+		if c.id != leavingClient.id {
 			aliveClients = append(aliveClients, c)
 		}
 	}
@@ -215,7 +215,7 @@ func (lobby *Lobby) onTurnExpired() {
 		return
 	}
 
-	lobby.BroadcastMessage(Message{Type: TurnExpired, Content: lobby.aliveClients[lobby.turnIndex].Id})
+	lobby.BroadcastMessage(Message{Type: TurnExpired, Content: lobby.aliveClients[lobby.turnIndex].id})
 	if len(lobby.aliveClients) > 2 {
 		// at least 2 clients still alive, keep the game going (lobby#changeTurn will handle dropping them)
 		lobby.changeTurn(true)
@@ -234,13 +234,13 @@ func (lobby *Lobby) onTurnExpired() {
 		}
 
 		lobby.aliveClients = []*Client{winningClient}
-		lobby.winnersName = winningClient.DisplayName
+		lobby.winnersName = winningClient.displayName
 
 		lobby.logger.Printf("Set the status to %s because %s ran out of time, which makes %s the winner",
 			lobby.status, losingClient, winningClient)
 
-		lobby.BroadcastMessage(Message{Type: TurnExpired, Content: losingClient.Id})
-		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.Id})
+		lobby.BroadcastMessage(Message{Type: TurnExpired, Content: losingClient.id})
+		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.id})
 	}
 }
 
@@ -267,7 +267,7 @@ func (lobby *Lobby) onRestartGame(message Message) {
 func (lobby *Lobby) resetAliveClients() {
 	// reset alive clients to hold all clients
 	lobby.aliveClients = slices.SortedFunc(maps.Values(lobby.clients), func(c1 *Client, c2 *Client) int {
-		return c1.Id - c2.Id
+		return c1.id - c2.id
 	})
 }
 
@@ -278,12 +278,12 @@ func (lobby *Lobby) onNameChange(message Message) {
 	}
 
 	client := lobby.clients[message.From]
-	client.DisplayName = newDisplayName
-	lobby.BroadcastMessage(Message{Type: NameChange, Content: ClientNameChange{ClientId: client.Id, NewDisplayName: newDisplayName}})
+	client.displayName = newDisplayName
+	lobby.BroadcastMessage(Message{Type: NameChange, Content: ClientNameChange{ClientId: client.id, NewDisplayName: newDisplayName}})
 }
 
 func (lobby *Lobby) onAnswerPreview(message Message) {
-	if lobby.status == InProgress && message.From == lobby.aliveClients[lobby.turnIndex].Id {
+	if lobby.status == InProgress && message.From == lobby.aliveClients[lobby.turnIndex].id {
 		currentAnswerPrev, ok := message.Content.(string)
 		if ok {
 			lobby.currentAnswerPrev = currentAnswerPrev
@@ -293,7 +293,7 @@ func (lobby *Lobby) onAnswerPreview(message Message) {
 }
 
 func (lobby *Lobby) onAnswerSubmitted(message Message) {
-	if lobby.status == InProgress && message.From == lobby.aliveClients[lobby.turnIndex].Id {
+	if lobby.status == InProgress && message.From == lobby.aliveClients[lobby.turnIndex].id {
 		answer, ok := message.Content.(string)
 		if !ok {
 			return
@@ -347,7 +347,7 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 		//   unless the last client got eliminated, in which case just need to reset the turnIndex to 0
 		aliveClients := make([]*Client, 0, len(lobby.aliveClients)-1)
 		for _, c := range lobby.aliveClients {
-			if c.Id != eliminatedClient.Id {
+			if c.id != eliminatedClient.id {
 				aliveClients = append(aliveClients, c)
 			}
 		}
@@ -365,7 +365,7 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 	lobby.BroadcastMessage(Message{
 		Type: ClientsTurn,
 		Content: ClientsTurnContent{
-			ClientId:  lobby.aliveClients[lobby.turnIndex].Id,
+			ClientId:  lobby.aliveClients[lobby.turnIndex].id,
 			Challenge: lobby.currentChallenge,
 			TurnEnd:   lobby.currentTurnEnd,
 		},
@@ -393,14 +393,14 @@ func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent
 
 	// sorted slice of clients (ensures ordering of clients is consistent for all players)
 	clients := slices.SortedFunc(maps.Values(lobby.clients), func(c1, c2 *Client) int {
-		return c1.Id - c2.Id
+		return c1.id - c2.id
 	})
 	clientContents := make([]ClientContent, 0, len(lobby.clients))
 	for _, c := range clients {
 		clientContents = append(clientContents, ClientContent{
-			Id:          c.Id,
-			DisplayName: c.DisplayName,
-			IconName:    c.IconName,
+			Id:          c.id,
+			DisplayName: c.displayName,
+			IconName:    c.iconName,
 			// for existing clients, they are considered alive if the game hasn't started yet, or they are still alive in their current/last game
 			Alive: lobby.status == WaitingForPlayers || isAliveMap[c],
 		})
@@ -408,7 +408,7 @@ func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent
 
 	var currentTurnId int
 	if lobby.status == InProgress {
-		currentTurnId = lobby.aliveClients[lobby.turnIndex].Id
+		currentTurnId = lobby.aliveClients[lobby.turnIndex].id
 	} else {
 		currentTurnId = 0
 	}

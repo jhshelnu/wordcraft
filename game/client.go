@@ -7,12 +7,12 @@ import (
 )
 
 type Client struct {
-	Id           int             // uniquely identifies the Client within the Lobby
-	DisplayName  string          // the display name for the client (shown to other players)
-	IconName     string          // the file name of the icon to show for this client in the lobby
-	Lobby        *Lobby          // holds a reference to the Lobby that the client is in
+	id           int             // uniquely identifies the Client within the lobby
+	displayName  string          // the display name for the client (shown to other players)
+	iconName     string          // the file name of the icon to show for this client in the lobby
+	lobby        *Lobby          // holds a reference to the lobby that the client is in
 	ws           *websocket.Conn // holds a reference to the WebSocket connection
-	write        chan Message    // a write channel used by the Lobby to pass messages that the client should transmit over the websocket
+	write        chan Message    // a write channel used by the lobby to pass messages that the client should transmit over the websocket
 	disconnected chan bool       // a channel used by the client's Read and Write goroutines to synchronize disconnects
 }
 
@@ -27,10 +27,10 @@ func JoinClientToLobby(ws *websocket.Conn, lobby *Lobby) error {
 
 	Id := lobby.GetNextClientId()
 	client := &Client{
-		Id:           Id,
-		DisplayName:  fmt.Sprintf("Player %d", Id),
-		IconName:     lobby.GetDefaultIconName(Id),
-		Lobby:        lobby,
+		id:           Id,
+		displayName:  fmt.Sprintf("Player %d", Id),
+		iconName:     lobby.GetDefaultIconName(Id),
+		lobby:        lobby,
 		ws:           ws,
 		write:        make(chan Message),
 		disconnected: make(chan bool),
@@ -77,17 +77,17 @@ func (c *Client) Read() {
 			return
 		}
 
-		message.From = c.Id
-		c.Lobby.read <- message
+		message.From = c.id
+		c.lobby.read <- message
 	}
 }
 
 func (c *Client) close() {
 	c.disconnected <- true // tell the other client goroutine to disconnect
-	c.Lobby.leave <- c
+	c.lobby.leave <- c
 	_ = c.ws.Close()
 }
 
 func (c *Client) String() string {
-	return fmt.Sprintf("Client[Id=%d, DisplayName='%s']", c.Id, c.DisplayName)
+	return fmt.Sprintf("Client[id=%d, displayName='%s']", c.id, c.displayName)
 }
