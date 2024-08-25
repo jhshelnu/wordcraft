@@ -742,7 +742,6 @@ gro
 gs
 gt
 gth
-gto
 gu
 gua
 gue
