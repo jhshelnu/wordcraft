@@ -347,8 +347,15 @@ function onTurnExpired(eliminatedClientId) {
 function onGameOver(winningClientId) {
     clearInterval(turnCountdownInterval)
 
-    document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess]`).textContent = ""
-    document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`).classList.add("invisible")
+    const currentGuessText = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess]`)
+    if (currentGuessText) {
+        currentGuessText.textContent = ""
+    }
+
+    const currentGuessPill = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
+    if (currentGuessPill) {
+        currentGuessPill.classList.add("invisible")
+    }
 
     let winnersName
     if (winningClientId === myClientId) {
