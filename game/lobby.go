@@ -3,8 +3,8 @@ package game
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/jhshelnu/wordgame/icons"
-	"github.com/jhshelnu/wordgame/words"
+	"github.com/jhshelnu/wordcraft/icons"
+	"github.com/jhshelnu/wordcraft/words"
 	"log"
 	"maps"
 	"os"

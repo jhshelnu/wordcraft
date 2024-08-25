@@ -1,4 +1,4 @@
-module github.com/jhshelnu/wordgame
+module github.com/jhshelnu/wordcraft
 
 go 1.23rc1
 

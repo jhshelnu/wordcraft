@@ -1,4 +1,4 @@
-# wordgame
+# wordcraft
 
 ## About
 todo
