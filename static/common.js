@@ -1,7 +1,7 @@
 function toast(msg, alertClass) {
     Toastify({
         text: msg,
-        duration: -1 /*4_000*/, // ms
+        duration: 4_000, // ms
         close: true,
         gravity: "top",
         position: "center",
