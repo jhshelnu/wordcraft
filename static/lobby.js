@@ -14,7 +14,7 @@ const CLIENTS_TURN    = "clients_turn"    // it's a new clients turn
 const GAME_OVER       = "game_over"       // the game is over
 const RESTART_GAME    = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
 const NAME_CHANGE     = "name_change"     // used by clients to indicate they want a new display name
-const SHUTDOWN_WARNING= "shutdown_warning" // tells the clients the server will soon shut down after a certain amount of minutes
+const SHUTDOWN_WARNING= "shutdown_warning" // tells the clients the server will soon shut down after a certain amount of seconds
 const SHUTDOWN        = "shutdown"         // tells the clients the server is being shutdown now
 
 // different values for gameStatus that indicate what point we're at in the game
@@ -387,8 +387,8 @@ function onRestartGame() {
     })
 }
 
-function onShutdownWarning(minutesRemaining) {
-    toast(`Server will be restarted within ${minutesRemaining} minutes for upgrades.`, "alert-warning")
+function onShutdownWarning(secondsRemaining) {
+    toast(`Server will be restarted within ${secondsRemaining} seconds for upgrades.`, "alert-warning")
 }
 
 function onShutdown() {

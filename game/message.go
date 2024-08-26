@@ -17,7 +17,7 @@ const (
 	GameOver                    = "game_over"        // the game is over
 	RestartGame                 = "restart_game"     // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
 	NameChange                  = "name_change"      // used by clients to indicate they want a new display name
-	ShutdownWarning             = "shutdown_warning" // tells the clients the server will soon shut down after a certain amount of minutes
+	ShutdownWarning             = "shutdown_warning" // tells the clients the server will soon shut down after a certain amount of seconds
 	Shutdown                    = "shutdown"         // tells the clients the server is being shutdown now
 )
 

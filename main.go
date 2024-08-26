@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	GracefulShutdownMins = 4
+	GracefulShutdownSeconds = 20
 )
 
 var isProd = os.Getenv("PROD") != ""
@@ -36,7 +36,7 @@ var gracefulShutdownOver <-chan time.Time
 func createLobby(c *gin.Context) {
 	if gracefulShutdownOver != nil {
 		logger.Printf("Rejecting creation of new lobby since a graceful shutdown has already been requested")
-		c.JSON(http.StatusServiceUnavailable, gin.H{"message": "Server is being restarted for upgrades, please wait a few minutes before trying again."})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"message": "Server is being restarted for upgrades, please wait a minute before trying again."})
 		return
 	}
 
@@ -161,14 +161,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	logger.Printf("Received request to shutdown. Waiting %d minutes for lobbies to conclude.", GracefulShutdownMins)
+	logger.Printf("Received request to shutdown. Waiting %d seconds for lobbies to conclude.", GracefulShutdownSeconds)
 	for _, lobby := range lobbies {
-		lobby.BroadcastShutdownWarning(GracefulShutdownMins)
+		lobby.BroadcastShutdownWarning(GracefulShutdownSeconds)
 	}
 
-	gracefulShutdownOver = time.After(GracefulShutdownMins * time.Minute)
+	gracefulShutdownOver = time.After(GracefulShutdownSeconds * time.Second)
 	<-gracefulShutdownOver
-	logger.Printf("Forcefully shutting down after %d minutes. Goodbye.", GracefulShutdownMins)
+	logger.Printf("Forcefully shutting down after %d seconds. Goodbye.", GracefulShutdownSeconds)
 	for _, lobby := range lobbies {
 		lobby.BroadcastShutdown()
 	}
