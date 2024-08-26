@@ -5,7 +5,7 @@ wordcraft is an online multiplayer word game available at https://wordcraft.ing
 
 Players must produce words given challenges which are pieces of words. For a challenge of "**st**", players can answer with:
 - **st**riped
-- je**st**er"
+- je**st**er
 - fea**st**
 - or any other valid English word containing "**st**"!
 
@@ -22,19 +22,24 @@ The UI is designed using [TailwindCSS](https://tailwindcss.com/) and [DaisyUI](h
 Building and running wordcraft locally requires a reasonably up-to-date version of `Go` and `npm`
 
 Assuming those are already installed and on the user's path, you can get started by installing `stringer`:
-> `go install golang.org/x/tools/cmd/stringer@latest`
+
+`go install golang.org/x/tools/cmd/stringer@latest`
 
 Next, run Go's `generate` subcommand across the codebase to handle any code-generation needed before a build:
-> `go generate ./...`
+
+`go generate ./...`
 
 Next, run the `npm` build script which will generate the final css file based on classes used in the application:
-> `npm install && npm run build`
+
+`npm install && npm run build`
 
 Or, for development, use the `devBuild` script to enable hot-reloading of the css file:
-> `npm run devBuild`
+
+`npm run devBuild`
 
 And finally, building and running the application:
-> `go build -o app && ./app`
+
+`go build -o app && ./app`
 
 The server will listen on the port defined in the `PORT` environment variable, falling back to port 8080 as a default.
 
