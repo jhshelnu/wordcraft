@@ -113,10 +113,6 @@ func (lobby *Lobby) StartLobby() {
 	}
 }
 
-func (lobby *Lobby) BroadcastShutdownWarning(secondsRemaining int) {
-	lobby.BroadcastMessage(Message{Type: ShutdownWarning, Content: secondsRemaining})
-}
-
 func (lobby *Lobby) BroadcastShutdown() {
 	lobby.BroadcastMessage(Message{Type: Shutdown})
 }

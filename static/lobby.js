@@ -14,7 +14,6 @@ const CLIENTS_TURN    = "clients_turn"    // it's a new clients turn
 const GAME_OVER       = "game_over"       // the game is over
 const RESTART_GAME    = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
 const NAME_CHANGE     = "name_change"     // used by clients to indicate they want a new display name
-const SHUTDOWN_WARNING= "shutdown_warning" // tells the clients the server will soon shut down after a certain amount of seconds
 const SHUTDOWN        = "shutdown"         // tells the clients the server is being shutdown now
 
 // different values for gameStatus that indicate what point we're at in the game
@@ -106,9 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 break
             case RESTART_GAME:
                 onRestartGame()
-                break
-            case SHUTDOWN_WARNING:
-                onShutdownWarning(content)
                 break
             case SHUTDOWN:
                 onShutdown()
@@ -393,9 +389,9 @@ function onShutdownWarning(secondsRemaining) {
 
 function onShutdown() {
     toast("Server is being restarted now for upgrades. Leaving lobby...", "alert-warning")
-    setTimeout(() => {
-        location.href = "/"
-    }, 3_000)
+    // setTimeout(() => {
+    //     location.href = "/"
+    // }, 3_000)
 }
 
 function shakeElement(e, amt) {

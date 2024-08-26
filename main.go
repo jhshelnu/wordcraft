@@ -16,10 +16,6 @@ import (
 	"time"
 )
 
-const (
-	GracefulShutdownSeconds = 20
-)
-
 var isProd = os.Getenv("PROD") != ""
 
 var logger = log.New(os.Stdout, "Application: ", log.Lshortfile|log.Lmsgprefix)
@@ -31,15 +27,8 @@ var upgrader = websocket.Upgrader{
 
 var lobbies = make(map[uuid.UUID]*game.Lobby)
 var lobbyEnded = make(chan uuid.UUID)
-var gracefulShutdownOver <-chan time.Time
 
 func createLobby(c *gin.Context) {
-	if gracefulShutdownOver != nil {
-		logger.Printf("Rejecting creation of new lobby since a graceful shutdown has already been requested")
-		c.JSON(http.StatusServiceUnavailable, gin.H{"message": "Server is being restarted for upgrades, please wait a minute before trying again."})
-		return
-	}
-
 	lobby := game.NewLobby(lobbyEnded)
 	go lobby.StartLobby()
 	lobbies[lobby.Id] = lobby
@@ -105,12 +94,6 @@ func handleEndedLobbies() {
 	for {
 		endedLobbyId := <-lobbyEnded
 		delete(lobbies, endedLobbyId)
-
-		// if a graceful shutdown has been requested and the last lobby just ended, we can shut down now
-		if gracefulShutdownOver != nil && len(lobbies) == 0 {
-			logger.Printf("Fulfilling graceful shutdown request now that all lobbies have concluded. Goodbye.")
-			os.Exit(0)
-		}
 	}
 }
 
@@ -161,17 +144,10 @@ func main() {
 		os.Exit(0)
 	}
 
-	logger.Printf("Received request to shutdown. Waiting %d seconds for lobbies to conclude.", GracefulShutdownSeconds)
-	for _, lobby := range lobbies {
-		lobby.BroadcastShutdownWarning(GracefulShutdownSeconds)
-	}
-
-	gracefulShutdownOver = time.After(GracefulShutdownSeconds * time.Second)
-	<-gracefulShutdownOver
-	logger.Printf("Forcefully shutting down after %d seconds. Goodbye.", GracefulShutdownSeconds)
+	logger.Printf("Received request to shutdown. Notifying %d lobbies first. Goodbye.", len(lobbies))
 	for _, lobby := range lobbies {
 		lobby.BroadcastShutdown()
 	}
 	time.Sleep(8 * time.Second) // give the clients enough time to see the shutdown message and be redirected to the home screen
-	os.Exit(1)
+	os.Exit(0)
 }
