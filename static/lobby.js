@@ -1,19 +1,21 @@
 // noinspection JSUnresolvedReference - GoLand doesn't recognize global objects declared in other script files like gsap
 
 // message types
-const START_GAME     = "start_game"      // the game has started
-const CLIENT_DETAILS = "client_details"  // sent to a newly connected client, indicating their id
-const CLIENT_JOINED  = "client_joined"   // a new client has joined
-const CLIENT_LEFT    = "client_left"     // a client has left
-const SUBMIT_ANSWER  = "submit_answer"   // when the client submits an answer
-const ANSWER_PREVIEW = "answer_preview"  // preview of the current answer (not submitted) so other clients can see
-const ANSWER_ACCEPTED= "answer_accepted" // the answer is accepted
-const ANSWER_REJECTED= "answer_rejected" // the answer is not accepted
-const TURN_EXPIRED   = "turn_expired"    // client has run out of time
-const CLIENTS_TURN   = "clients_turn"    // it's a new clients turn
-const GAME_OVER      = "game_over"       // the game is over
-const RESTART_GAME   = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
-const NAME_CHANGE    = "name_change"     // used by clients to indicate they want a new display name
+const START_GAME      = "start_game"      // the game has started
+const CLIENT_DETAILS  = "client_details"  // sent to a newly connected client, indicating their id
+const CLIENT_JOINED   = "client_joined"   // a new client has joined
+const CLIENT_LEFT     = "client_left"     // a client has left
+const SUBMIT_ANSWER   = "submit_answer"   // when the client submits an answer
+const ANSWER_PREVIEW  = "answer_preview"  // preview of the current answer (not submitted) so other clients can see
+const ANSWER_ACCEPTED = "answer_accepted" // the answer is accepted
+const ANSWER_REJECTED = "answer_rejected" // the answer is not accepted
+const TURN_EXPIRED    = "turn_expired"    // client has run out of time
+const CLIENTS_TURN    = "clients_turn"    // it's a new clients turn
+const GAME_OVER       = "game_over"       // the game is over
+const RESTART_GAME    = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
+const NAME_CHANGE     = "name_change"     // used by clients to indicate they want a new display name
+const SHUTDOWN_WARNING= "shutdown_warning" // tells the clients the server will soon shut down after a certain amount of minutes
+const SHUTDOWN        = "shutdown"         // tells the clients the server is being shutdown now
 
 // different values for gameStatus that indicate what point we're at in the game
 const WAITING_FOR_PLAYERS = 0
@@ -104,6 +106,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 break
             case RESTART_GAME:
                 onRestartGame()
+                break
+            case SHUTDOWN_WARNING:
+                onShutdownWarning(content)
+                break
+            case SHUTDOWN:
+                onShutdown()
                 break
         }
     }
@@ -313,7 +321,7 @@ function countDownTurn(currentChallenge, turnEnd) {
 // returns the seconds until a given time (provided as milliseconds since the unix epoch in UTC), or 0 if the timestamp has already passed
 function getSecondsUntil(unixMilli) {
     let secondsUntilTurnExpires = (new Date(unixMilli) - new Date()) / 1_000
-    return Math.max(Math.floor(secondsUntilTurnExpires), 0)
+    return Math.max(Math.round(secondsUntilTurnExpires), 0)
 }
 
 function onAnswerPreview(answerPreview) {
@@ -377,6 +385,17 @@ function onRestartGame() {
     document.querySelectorAll("#clients-list [data-client-id]").forEach(renderedClient => {
         renderedClient.classList.remove("opacity-40")
     })
+}
+
+function onShutdownWarning(minutesRemaining) {
+    toast(`Server will be restarted within ${minutesRemaining} minutes for upgrades.`, "alert-warning")
+}
+
+function onShutdown() {
+    toast("Server is being restarted now for upgrades. Leaving lobby...", "alert-warning")
+    setTimeout(() => {
+        location.href = "/"
+    }, 3_000)
 }
 
 function shakeElement(e, amt) {

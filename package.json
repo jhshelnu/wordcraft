@@ -6,7 +6,7 @@
     "scripts": {
         "build": "npm run generateCss",
         "devBuild": "npm run generateCssAndWatch",
-        "generateCss": "npx tailwindcss -i ./templates/main.css -o ./static/main.css",
-        "generateCssAndWatch": "npx tailwindcss -i ./templates/main.css -o ./static/main.css --watch"
+        "generateCss": "npx tailwindcss -i ./css/main.css -o ./static/main.css",
+        "generateCssAndWatch": "npx tailwindcss -i ./css/main.css -o ./static/main.css --watch"
     }
 }

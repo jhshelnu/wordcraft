@@ -59,7 +59,7 @@ type Lobby struct {
 
 func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
 	Id := uuid.New()
-	logger := log.New(os.Stdout, fmt.Sprintf("Lobby [%s]: ", Id), log.Lmicroseconds|log.Lshortfile|log.Lmsgprefix)
+	logger := log.New(os.Stdout, fmt.Sprintf("Lobby [%s]: ", Id), log.Lshortfile|log.Lmsgprefix)
 
 	return &Lobby{
 		logger:    logger,
@@ -111,6 +111,14 @@ func (lobby *Lobby) StartLobby() {
 			lobby.onTurnExpired()
 		}
 	}
+}
+
+func (lobby *Lobby) BroadcastShutdownWarning(minutesRemaining int) {
+	lobby.BroadcastMessage(Message{Type: ShutdownWarning, Content: minutesRemaining})
+}
+
+func (lobby *Lobby) BroadcastShutdown() {
+	lobby.BroadcastMessage(Message{Type: Shutdown})
 }
 
 func (lobby *Lobby) onClientJoin(joiningClient *Client) {
