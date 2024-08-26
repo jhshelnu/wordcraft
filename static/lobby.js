@@ -130,7 +130,7 @@ function onClientDetails(content) {
     let currentTurnId = content["CurrentTurnId"] // the id of the client whose turn it is (or 0 if not applicable)
     let currentChallenge = content["CurrentChallenge"] // what the current challenge is, or "" if there isn't one
     let currentAnswerPrev = content["CurrentAnswerPrev"] // what the client whose turn it is currently has typed in
-    let turnEndTimestamp = content["TurnEnd"] // the timestamp in UTC for when the current turn expires
+    let turnEnd = content["TurnEnd"] // milliseconds from unix epoch (UTC), or 0 if not applicable
     let winnersName = content["WinnersName"] // name of the client who won (at the moment of winning), or "" if not applicable
 
     // render the clients
@@ -151,8 +151,8 @@ function onClientDetails(content) {
                 clientsTurnId = currentTurnId
             }
 
-            if (currentChallenge && turnEndTimestamp) {
-                countDownTurn(currentChallenge, turnEndTimestamp)
+            if (currentChallenge && turnEnd) {
+                countDownTurn(currentChallenge, turnEnd)
             }
             break
         case OVER:
@@ -268,10 +268,10 @@ function onClientsTurn(content) {
     inviteButton.classList.add("hidden")
 
     let newClientsTurnId = content["ClientId"]
-    let turnEndTimestamp = content["TurnEnd"] // UTC
+    let turnEnd = content["TurnEnd"] // milliseconds from unix epoch (UTC)
     let currentChallenge = content["Challenge"]
 
-    countDownTurn(currentChallenge, turnEndTimestamp)
+    countDownTurn(currentChallenge, turnEnd)
 
     if (clientsTurnId) {
         let previousTurnClient = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
@@ -296,23 +296,23 @@ function onClientsTurn(content) {
     clientsTurnId = newClientsTurnId
 }
 
-function countDownTurn(currentChallenge, turnEndTimestamp) {
-    statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEndTimestamp)}s`
+function countDownTurn(currentChallenge, turnEnd) {
+    statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEnd)}s`
     statusText.classList.remove("hidden")
     turnCountdownInterval = setInterval(() => {
         // sometimes, depending on timing, this may fire one more time after the game is over
         // so, don't update the status text if it's already declared a winner
         if (statusText.textContent.startsWith("Challenge")) {
-            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEndTimestamp)}s`
+            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEnd)}s`
         } else {
             clearInterval(turnCountdownInterval)
         }
-    }, 1_000)
+    }, 100)
 }
 
-// returns the seconds until a given UTC timestamp, or 0 if the timestamp has already passed
-function getSecondsUntil(utcTimestamp) {
-    let secondsUntilTurnExpires = (new Date(utcTimestamp) - new Date()) / 1_000
+// returns the seconds until a given time (provided as milliseconds since the unix epoch in UTC), or 0 if the timestamp has already passed
+function getSecondsUntil(unixMilli) {
+    let secondsUntilTurnExpires = (new Date(unixMilli) - new Date()) / 1_000
     return Math.max(Math.floor(secondsUntilTurnExpires), 0)
 }
 

@@ -28,7 +28,7 @@ type Message struct {
 type ClientsTurnContent struct {
 	ClientId  int    // whose turn it is
 	Challenge string // what the challenge string is, e.g. "atr"
-	TurnEnd   string // a UTC timestamp for when the current turn will end
+	TurnEnd   int64  // milliseconds from unix epoch (UTC)
 }
 
 // ClientDetailsContent is broadcast from the server to one particular client at the moment of connection
@@ -40,7 +40,7 @@ type ClientDetailsContent struct {
 	CurrentTurnId     int             // the id of the client whose turn it is (or 0 if not applicable)
 	CurrentChallenge  string          // what the current challenge is, or "" if there isn't one
 	CurrentAnswerPrev string          // what the client whose turn it is currently has typed in
-	TurnEnd           string          // timestamp string of when the current turn expires in UTC, or "" if not applicable
+	TurnEnd           int64           // milliseconds from unix epoch (UTC), or 0 if not applicable
 	WinnersName       string          // name of the client who won (at the moment of winning), or "" if not applicable
 }
 

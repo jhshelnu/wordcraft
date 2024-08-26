@@ -47,7 +47,7 @@ type Lobby struct {
 	turnIndex         int              // the index in aliveClients of whose turn it is
 	currentChallenge  string           // the current challenge string for clientsTurn
 	currentAnswerPrev string           // preview of what the client whose turn it is has typed so far
-	currentTurnEnd    string           // the timestamp in UTC of when the current turn will expire
+	currentTurnEnd    int64            // when the current turn ends, in milliseconds from the unix epoch (UTC)
 	turnExpired       <-chan time.Time // a (read-only) channel which produces a single boolean value once the client has run out of time
 	winnersName       string           // the name of the winning client (captured at the moment they won) this is for new clients joining after the game
 
@@ -361,7 +361,8 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 	}
 
 	lobby.currentChallenge = words.GetChallenge()
-	lobby.currentTurnEnd = lobby.BuildTurnEndTimeStamp(TurnLimitSeconds)
+	lobby.currentTurnEnd = time.Now().Add(TurnLimitSeconds * time.Second).UnixMilli()
+	lobby.turnExpired = time.After(TurnLimitSeconds * time.Second)
 	lobby.BroadcastMessage(Message{
 		Type: ClientsTurn,
 		Content: ClientsTurnContent{
@@ -370,17 +371,6 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 			TurnEnd:   lobby.currentTurnEnd,
 		},
 	})
-	lobby.turnExpired = time.After(TurnLimitSeconds * time.Second)
-}
-
-// BuildTurnEndTimeStamp returns a UTC timestamp of the moment when the turn expires
-func (lobby *Lobby) BuildTurnEndTimeStamp(afterSeconds int) string {
-	ts, err := time.Now().Add(time.Duration(afterSeconds) * time.Second).UTC().MarshalText()
-	if err != nil {
-		lobby.logger.Printf("Failed to build turn end timestamp for '%d' seconds from now", afterSeconds)
-		return ""
-	}
-	return string(ts)
 }
 
 // BuildClientDetails is responsible for building and returning a ClientDetailsContent struct
