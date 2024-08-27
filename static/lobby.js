@@ -383,10 +383,6 @@ function onRestartGame() {
     })
 }
 
-function onShutdownWarning(secondsRemaining) {
-    toast(`Server will be restarted within ${secondsRemaining} seconds for upgrades.`, "alert-warning")
-}
-
 function onShutdown() {
     toast("Server is being restarted now for upgrades. Leaving lobby...", "alert-warning")
     setTimeout(() => {

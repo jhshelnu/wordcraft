@@ -45,6 +45,7 @@ type Lobby struct {
 	aliveClients      []*Client        // all clients in the lobby who are not out
 	status            gameStatus       // the status of the game, indicates if its started, in progress, etc
 	turnIndex         int              // the index in aliveClients of whose turn it is
+	turnRounds        int              // how many times the turn has changed to the first player (lowest client id)
 	currentChallenge  string           // the current challenge string for clientsTurn
 	currentAnswerPrev string           // preview of what the client whose turn it is has typed so far
 	currentTurnEnd    int64            // when the current turn ends, in milliseconds from the unix epoch (UTC)
@@ -263,6 +264,7 @@ func (lobby *Lobby) onRestartGame(message Message) {
 		lobby.resetAliveClients()
 		lobby.status = InProgress
 		lobby.turnIndex = -1
+		lobby.turnRounds = 0
 		lobby.BroadcastMessage(Message{Type: RestartGame})
 		lobby.changeTurn(false)
 	}
@@ -364,7 +366,11 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 		lobby.logger.Printf("Changing turn from %s (eliminated) to %s", eliminatedClient, lobby.aliveClients[lobby.turnIndex])
 	}
 
-	lobby.currentChallenge = words.GetChallenge()
+	if lobby.turnIndex == 0 {
+		lobby.turnRounds++
+	}
+
+	lobby.currentChallenge = words.GetChallenge(lobby.getTurnDifficulty())
 	lobby.currentTurnEnd = time.Now().Add(TurnLimitSeconds * time.Second).UnixMilli()
 	lobby.turnExpired = time.After(TurnLimitSeconds * time.Second)
 	lobby.BroadcastMessage(Message{
@@ -375,6 +381,20 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 			TurnEnd:   lobby.currentTurnEnd,
 		},
 	})
+}
+
+func (lobby *Lobby) getTurnDifficulty() words.ChallengeDifficulty {
+	var difficulty words.ChallengeDifficulty
+	if lobby.turnRounds > 10 {
+		difficulty = words.ChallengeHard
+	} else if lobby.turnRounds > 4 {
+		difficulty = words.ChallengeMedium
+	} else {
+		difficulty = words.ChallengeEasy
+	}
+
+	lobby.logger.Printf("On round #%d, choosing %s difficulty", lobby.turnRounds, difficulty)
+	return difficulty
 }
 
 // BuildClientDetails is responsible for building and returning a ClientDetailsContent struct
