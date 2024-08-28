@@ -23,6 +23,7 @@ const OVER = 2
 
 let ws                    // the websocket connection
 let myClientId            // our assigned id for the lobby we're joining
+let gameStatus            // the status of the game
 let myDisplayNameInput    // the <input> which holds our current displayName
 let startGameButton       // the button to start the game
 let restartGameButton     // the button to restart the game
@@ -129,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // its job is to catch the client up on details-- what their id is, the current state of the game, etc
 function onClientDetails(content) {
     myClientId = content["ClientId"] // this is our assigned clientId for the rest of the lobby
-    let status = content["Status"]   // the status of the game (need to know if it's started yet or not)
+    gameStatus = content["Status"]   // the status of the game (need to know if it's started yet or not)
     let clients = content["Clients"] // all the clients that are already in the game
     let currentTurnId = content["CurrentTurnId"] // the id of the client whose turn it is (or 0 if not applicable)
     let currentChallenge = content["CurrentChallenge"] // what the current challenge is, or "" if there isn't one
@@ -143,7 +144,7 @@ function onClientDetails(content) {
     })
 
     // then render the other buttons, etc. depending on the game state
-    switch (status) {
+    switch (gameStatus) {
         case WAITING_FOR_PLAYERS:
             startGameButton.classList.remove("hidden")
             inviteButton.classList.remove("hidden")
@@ -306,7 +307,7 @@ async function countDownTurn(currentChallenge, turnEnd) {
     turnCountdownInterval = setInterval(async () => {
         // sometimes, depending on timing, this may fire one more time after the game is over
         // so, don't update the status text if it's already declared a winner
-        if (statusText.textContent.startsWith("Challenge")) {
+        if (gameStatus === IN_PROGRESS) {
             statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${await getSecondsUntil(turnEnd)}s`
         } else {
             clearInterval(turnCountdownInterval)
@@ -361,6 +362,8 @@ function onTurnExpired(eliminatedClientId) {
 function onGameOver(winningClientId) {
     clearInterval(turnCountdownInterval)
 
+    gameStatus = OVER
+
     const currentGuessText = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess]`)
     if (currentGuessText) {
         currentGuessText.textContent = ""
@@ -387,6 +390,7 @@ function onGameOver(winningClientId) {
 }
 
 function onRestartGame() {
+    gameStatus = IN_PROGRESS
     restartGameButton.classList.add("hidden")
     document.querySelectorAll("#clients-list [data-client-id]").forEach(renderedClient => {
         renderedClient.classList.remove("opacity-40")
