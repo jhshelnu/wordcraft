@@ -385,29 +385,28 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 }
 
 func (lobby *Lobby) getTurnDifficulty() words.ChallengeDifficulty {
-	var difficulty words.ChallengeDifficulty
 	if lobby.turnRounds > 10 {
-		difficulty = words.ChallengeHard
+		return words.ChallengeHard
 	} else if lobby.turnRounds > 4 {
-		difficulty = words.ChallengeMedium
+		return words.ChallengeMedium
 	} else {
-		difficulty = words.ChallengeEasy
+		return words.ChallengeEasy
 	}
-
-	lobby.logger.Printf("On round #%d, choosing %s difficulty", lobby.turnRounds, difficulty)
-	return difficulty
 }
 
 func (lobby *Lobby) getTurnLimitDuration() time.Duration {
 	switch true {
 	case lobby.turnRounds > 12:
-		return 16 * time.Second
+		return 16 * time.Second // rounds 13+: 16 seconds
 	case lobby.turnRounds > 5:
-		return 18 * time.Second
+		return 18 * time.Second // rounds 6-12: 18 seconds
 	case lobby.turnRounds > 1:
-		return 20 * time.Second
+		return 20 * time.Second // rounds 2-5: 20 seconds
+	case lobby.turnRounds == 1:
+		return 25 * time.Second // round 1: 25 seconds (give them bonus time to get familiar with the game)
 	default:
-		return 25 * time.Second
+		lobby.logger.Printf("WARN: No turnLimit duration specified for %d turnRounds. Falling back to 20 second default.", lobby.turnRounds)
+		return 20 * time.Second
 	}
 }
 

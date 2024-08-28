@@ -156,7 +156,7 @@ function onClientDetails(content) {
             }
 
             if (currentChallenge && turnEnd) {
-                countDownTurn(currentChallenge, turnEnd)
+                void countDownTurn(currentChallenge, turnEnd)
             }
             break
         case OVER:
@@ -275,7 +275,7 @@ function onClientsTurn(content) {
     let turnEnd = content["TurnEnd"] // milliseconds from unix epoch (UTC)
     let currentChallenge = content["Challenge"]
 
-    countDownTurn(currentChallenge, turnEnd)
+    void countDownTurn(currentChallenge, turnEnd)
 
     if (clientsTurnId) {
         let previousTurnClient = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
@@ -300,14 +300,14 @@ function onClientsTurn(content) {
     clientsTurnId = newClientsTurnId
 }
 
-function countDownTurn(currentChallenge, turnEnd) {
-    statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEnd)}s`
+async function countDownTurn(currentChallenge, turnEnd) {
+    statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${await getSecondsUntil(turnEnd)}s`
     statusText.classList.remove("hidden")
-    turnCountdownInterval = setInterval(() => {
+    turnCountdownInterval = setInterval(async () => {
         // sometimes, depending on timing, this may fire one more time after the game is over
         // so, don't update the status text if it's already declared a winner
         if (statusText.textContent.startsWith("Challenge")) {
-            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEnd)}s`
+            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${await getSecondsUntil(turnEnd)}s`
         } else {
             clearInterval(turnCountdownInterval)
         }
@@ -315,9 +315,19 @@ function countDownTurn(currentChallenge, turnEnd) {
 }
 
 // returns the seconds until a given time (provided as milliseconds since the unix epoch in UTC), or 0 if the timestamp has already passed
-function getSecondsUntil(unixMilli) {
-    let secondsUntilTurnExpires = (new Date(unixMilli) - new Date()) / 1_000
-    return Math.max(Math.round(secondsUntilTurnExpires), 0)
+async function getSecondsUntil(endMilli) {
+    // ask the server for the current time, while timing the RTT
+    const requestStartMilli = new Date().getTime()
+    const serverStartMilli = Number(await fetch("/api/time").then(res => res.text()))
+    const requestEndMilli = new Date().getTime()
+
+    // calculate the offset (half of RTT) and add that to the server's response.
+    // that's the current time (start)
+    const offset = (requestEndMilli - requestStartMilli) / 2
+    const startMilli = serverStartMilli + offset
+
+    let secondsUntil = (endMilli - startMilli) / 1_000
+    return Math.max(Math.round(secondsUntil), 0)
 }
 
 function onAnswerPreview(answerPreview) {
