@@ -268,7 +268,7 @@ function renderNewClientCard(clientId, displayName, iconName, alive, isMe) {
 
 function onClientsTurn(content) {
     clearInterval(turnCountdownInterval)
-    statusText = IN_PROGRESS
+    gameStatus = IN_PROGRESS
 
     startGameButton.classList.add("hidden")
     inviteButton.classList.add("hidden")
