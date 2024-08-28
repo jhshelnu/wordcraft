@@ -307,8 +307,9 @@ async function countDownTurn(currentChallenge, turnEnd) {
     turnCountdownInterval = setInterval(async () => {
         // sometimes, depending on timing, this may fire one more time after the game is over
         // so, don't update the status text if it's already declared a winner
+        let secondsUntil = await getSecondsUntil(turnEnd)
         if (gameStatus === IN_PROGRESS) {
-            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${await getSecondsUntil(turnEnd)}s`
+            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${secondsUntil}s`
         } else {
             clearInterval(turnCountdownInterval)
         }
