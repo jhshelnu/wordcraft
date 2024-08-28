@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
@@ -98,12 +97,6 @@ func handleEndedLobbies() {
 	}
 }
 
-// responds with the current time as milliseconds since the unix epoch (in UTC)
-func getCurrentTime(c *gin.Context) {
-	now := time.Now().UnixMilli()
-	c.Data(http.StatusOK, gin.MIMEPlain, []byte(strconv.FormatInt(now, 10)))
-}
-
 func main() {
 	if err := words.Init(); err != nil {
 		log.Fatal(err)
@@ -125,7 +118,6 @@ func main() {
 
 	// API
 	apiGroup := server.Group("/api")
-	apiGroup.GET("/time", getCurrentTime)
 	apiGroup.POST("/lobby", createLobby)
 
 	// HTML
