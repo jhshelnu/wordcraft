@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	TurnLimitSeconds = 20
-	MaxDisplayName   = 15
+	MaxDisplayName = 15
 )
 
 //go:generate stringer -type gameStatus
@@ -370,9 +369,11 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 		lobby.turnRounds++
 	}
 
+	turnLimitDuration := lobby.getTurnLimitDuration()
+	lobby.currentTurnEnd = time.Now().Add(turnLimitDuration).UnixMilli()
+	lobby.turnExpired = time.After(turnLimitDuration)
 	lobby.currentChallenge = words.GetChallenge(lobby.getTurnDifficulty())
-	lobby.currentTurnEnd = time.Now().Add(TurnLimitSeconds * time.Second).UnixMilli()
-	lobby.turnExpired = time.After(TurnLimitSeconds * time.Second)
+
 	lobby.BroadcastMessage(Message{
 		Type: ClientsTurn,
 		Content: ClientsTurnContent{
@@ -395,6 +396,19 @@ func (lobby *Lobby) getTurnDifficulty() words.ChallengeDifficulty {
 
 	lobby.logger.Printf("On round #%d, choosing %s difficulty", lobby.turnRounds, difficulty)
 	return difficulty
+}
+
+func (lobby *Lobby) getTurnLimitDuration() time.Duration {
+	switch true {
+	case lobby.turnRounds > 12:
+		return 16 * time.Second
+	case lobby.turnRounds > 5:
+		return 18 * time.Second
+	case lobby.turnRounds > 1:
+		return 20 * time.Second
+	default:
+		return 25 * time.Second
+	}
 }
 
 // BuildClientDetails is responsible for building and returning a ClientDetailsContent struct

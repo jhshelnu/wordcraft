@@ -387,7 +387,7 @@ function onShutdown() {
     toast("Server is being restarted now for upgrades. Leaving lobby...", "alert-warning")
     setTimeout(() => {
         location.href = "/"
-    }, 3_000)
+    }, 4_000)
 }
 
 function shakeElement(e, amt) {
