@@ -34,6 +34,8 @@ let challengeInputSection // the part of the page to get the user's input (only 
 let answerInput           // the input element which holds what the user has typed so far
 let statusText            // large text at the top of the screen displaying the current status (current challenge, who won, etc.)
 let turnCountdownInterval // the interval where we count down how many seconds the user has left
+let suggestionsTable      // the <table> holding suggestions
+let suggestionsBody       // the <tbody> holding the specific suggestions
 
 const VOLUME = 0.4 // how loud to play the audio
 let answerAcceptedAudio    // what plays when an answer is accepted
@@ -51,6 +53,8 @@ document.addEventListener("DOMContentLoaded", () => {
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
     statusText = document.getElementById("status-text")
+    suggestionsTable = document.getElementById("suggestions-table")
+    suggestionsBody = document.getElementById("suggestions-body")
 
     answerAcceptedAudio = new Audio("/static/sounds/answer_accepted.mp3")
     clientJoinedAudio   = new Audio("/static/sounds/client_joined.mp3")
@@ -303,14 +307,20 @@ function onClientsTurn(content) {
 }
 
 function countDownTurn(currentChallenge, turnEnd) {
-    statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${getSecondsUntil(turnEnd)}s`
+    statusText.innerHTML = `
+        <span class="mr-16">Challenge: ${currentChallenge}</span>
+        Time left: 
+        <span class="countdown">
+            <span id="seconds-left" style="--value: ${getSecondsUntil(turnEnd)}"></span>
+        </span>s
+    `
     statusText.classList.remove("hidden")
     turnCountdownInterval = setInterval(async () => {
         // sometimes, depending on timing, this may fire one more time after the game is over
         // so, don't update the status text if it's already declared a winner
-        let secondsUntil = getSecondsUntil(turnEnd)
         if (gameStatus === IN_PROGRESS) {
-            statusText.textContent = `Challenge: ${currentChallenge}   Time left: ${secondsUntil}s`
+            let secondsLeft = getSecondsUntil(turnEnd)
+            document.getElementById("seconds-left").style.setProperty("--value", String(secondsLeft))
         } else {
             clearInterval(turnCountdownInterval)
         }
@@ -343,13 +353,28 @@ function onAnswerRejected() {
     shakeElement(pill, 10)
 }
 
-function onTurnExpired(eliminatedClientId) {
+function onTurnExpired(content) {
+    let eliminatedClientId = content["EliminatedClientId"]
+    let suggestions = content["Suggestions"]
     document.querySelector(`#clients-list [data-client-id="${eliminatedClientId}"]`).classList.add("opacity-40")
     clientEliminated.volume = VOLUME
     clientEliminated.play()
     if (eliminatedClientId === myClientId) {
         challengeInputSection.classList.add("hidden")
+        clearSuggestions()
+        suggestions.forEach(suggestion => renderSuggestion(suggestion))
+        suggestionsTable.classList.remove("hidden")
     }
+}
+
+function renderSuggestion(suggestion) {
+    let template = document.createElement("template")
+    template.innerHTML = `<tr><td class="py-2">${suggestion}</td></tr>`
+    suggestionsBody.appendChild(template.content)
+}
+
+function clearSuggestions() {
+    suggestionsBody.innerHTML = ''
 }
 
 function onGameOver(winningClientId) {
@@ -387,6 +412,7 @@ function onRestartGame() {
     document.querySelectorAll("#clients-list [data-client-id]").forEach(renderedClient => {
         renderedClient.classList.remove("opacity-40")
     })
+    suggestionsTable.classList.add("hidden")
 }
 
 function onShutdown() {

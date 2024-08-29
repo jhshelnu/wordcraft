@@ -73,6 +73,10 @@ func GetChallenge(difficulty ChallengeDifficulty) string {
 	return challenges[rand.IntN(high-low)+low]
 }
 
+func GetChallengeSuggestions(challenge string) []string {
+	return suggestions[challenge]
+}
+
 func processFile(fileName string, lineFn func(string)) error {
 	file, err := os.Open(path.Join(directory, fileName))
 	if err != nil {

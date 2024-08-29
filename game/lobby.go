@@ -219,9 +219,14 @@ func (lobby *Lobby) onTurnExpired() {
 		return
 	}
 
-	lobby.BroadcastMessage(Message{Type: TurnExpired, Content: lobby.aliveClients[lobby.turnIndex].id})
+	eliminatedClient := lobby.aliveClients[lobby.turnIndex]
+	lobby.BroadcastMessage(Message{Type: TurnExpired, Content: TurnExpiredContent{
+		EliminatedClientId: eliminatedClient.id,
+		Suggestions:        words.GetChallengeSuggestions(lobby.currentChallenge),
+	}})
+
 	if len(lobby.aliveClients) > 2 {
-		// at least 2 clients still alive, keep the game going (lobby#changeTurn will handle dropping them)
+		// at least 2 clients still alive still, keep the game going (lobby#changeTurn will handle dropping them)
 		lobby.changeTurn(true)
 	} else {
 		// only one client alive, we have a winner
@@ -229,7 +234,7 @@ func (lobby *Lobby) onTurnExpired() {
 
 		// we're here because there are 2 clients remaining and one of them just had their turn expire
 		// so, the winner is the *other* one
-		losingClient := lobby.aliveClients[lobby.turnIndex]
+
 		var winningClient *Client
 		if lobby.turnIndex == 0 {
 			winningClient = lobby.aliveClients[1]
@@ -241,9 +246,8 @@ func (lobby *Lobby) onTurnExpired() {
 		lobby.winnersName = winningClient.displayName
 
 		lobby.logger.Printf("Set the status to %s because %s ran out of time, which makes %s the winner",
-			lobby.status, losingClient, winningClient)
+			lobby.status, eliminatedClient, winningClient)
 
-		lobby.BroadcastMessage(Message{Type: TurnExpired, Content: losingClient.id})
 		lobby.BroadcastMessage(Message{Type: GameOver, Content: winningClient.id})
 	}
 }

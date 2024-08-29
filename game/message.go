@@ -32,6 +32,11 @@ type ClientsTurnContent struct {
 	TurnEnd   int64  // milliseconds from unix epoch (UTC)
 }
 
+type TurnExpiredContent struct {
+	EliminatedClientId int      // id of the client who just went out
+	Suggestions        []string // some common words they could have answered with
+}
+
 // ClientDetailsContent is broadcast from the server to one particular client at the moment of connection
 // it's job is to catch the client up on details-- what their id is, the current state of the game, etc
 type ClientDetailsContent struct {
