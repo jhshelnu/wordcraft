@@ -1924,6 +1924,10 @@ html {
   margin-right: 0.125rem;
 }
 
+.mr-16 {
+  margin-right: 4rem;
+}
+
 .mt-0\.5 {
   margin-top: 0.125rem;
 }
@@ -1946,18 +1950,6 @@ html {
 
 .mt-4 {
   margin-top: 1rem;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.mr-4 {
-  margin-right: 1rem;
-}
-
-.mr-16 {
-  margin-right: 4rem;
 }
 
 .flex {

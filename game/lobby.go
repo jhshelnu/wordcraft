@@ -120,6 +120,10 @@ func (lobby *Lobby) BroadcastShutdown() {
 func (lobby *Lobby) onClientJoin(joiningClient *Client) {
 	lobby.logger.Printf("%s connected", joiningClient)
 
+	if lobby.status != InProgress {
+		lobby.aliveClients = append(lobby.aliveClients, joiningClient)
+	}
+
 	// fill in the client on everything they missed
 	joiningClient.write <- Message{Type: ClientDetails, Content: lobby.BuildClientDetails(joiningClient.id)}
 
@@ -256,7 +260,6 @@ func (lobby *Lobby) onStartGame(message Message) {
 	if lobby.status == WaitingForPlayers && len(lobby.clients) >= 2 {
 		lobby.logger.Printf("%s has started the game", lobby.clients[message.From])
 		lobby.status = InProgress
-		lobby.resetAliveClients()
 		lobby.changeTurn(false)
 	}
 }
@@ -432,8 +435,7 @@ func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent
 			Id:          c.id,
 			DisplayName: c.displayName,
 			IconName:    c.iconName,
-			// for existing clients, they are considered alive if the game hasn't started yet, or they are still alive in their current/last game
-			Alive: lobby.status == WaitingForPlayers || isAliveMap[c],
+			Alive:       isAliveMap[c],
 		})
 	}
 
