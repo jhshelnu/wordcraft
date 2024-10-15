@@ -58,7 +58,7 @@ type ClientJoinedContent struct {
 	Alive       bool   // whether they are alive or not
 }
 
-type ClientNameChange struct {
+type ClientNameChangeContent struct {
 	ClientId       int    // who is changing their name
 	NewDisplayName string // what they are changing their name to
 }

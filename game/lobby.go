@@ -87,6 +87,10 @@ func (lobby *Lobby) GetDefaultIconName(id int) string {
 	return lobby.iconNames[(id-1)%len(lobby.iconNames)]
 }
 
+func (lobby *Lobby) GetClientCount() int {
+	return len(lobby.clients)
+}
+
 func (lobby *Lobby) StartLobby() {
 	defer lobby.EndLobby()
 	defer func() {
@@ -291,7 +295,7 @@ func (lobby *Lobby) onNameChange(message Message) {
 
 	client := lobby.clients[message.From]
 	client.displayName = newDisplayName
-	lobby.BroadcastMessage(Message{Type: NameChange, Content: ClientNameChange{ClientId: client.id, NewDisplayName: newDisplayName}})
+	lobby.BroadcastMessage(Message{Type: NameChange, Content: ClientNameChangeContent{ClientId: client.id, NewDisplayName: newDisplayName}})
 }
 
 func (lobby *Lobby) onAnswerPreview(message Message) {

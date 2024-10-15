@@ -49,7 +49,6 @@ For production, the environment variable `PROD` needs to be set. It can be set t
 
 
 ## Todo
-- cap lobby size at 10
 - add server timeout if no events occur within a time limit
 - rate limit messages/lobby creation/etc
 - outline player card when it's their turn, only show answer pill when current answer isn't empty

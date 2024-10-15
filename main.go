@@ -16,6 +16,8 @@ import (
 	"time"
 )
 
+const MaxLobbySize = 10
+
 var isProd = os.Getenv("PROD") != ""
 
 var logger = log.New(os.Stdout, "Application: ", log.Lshortfile|log.Lmsgprefix)
@@ -53,6 +55,13 @@ func openLobby(c *gin.Context) {
 	if !exists {
 		c.HTML(http.StatusOK, "home.gohtml", gin.H{
 			"error": "Lobby not found",
+		})
+		return
+	}
+
+	if lobbies[lobbyId].GetClientCount() >= MaxLobbySize {
+		c.HTML(http.StatusOK, "home.gohtml", gin.H{
+			"error": "Lobby is full",
 		})
 		return
 	}
