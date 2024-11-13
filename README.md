@@ -54,7 +54,6 @@ For production, the environment variable `PROD` needs to be set. It can be set t
 - outline player card when it's their turn, only show answer pill when current answer isn't empty
 - add end game sound effects/confetti/etc
 - allow players to change profile pictures
-- display potential answers when a player gets eliminated
 - gracefully handle browser refreshes (if possible: remember player)
 - add lobby music with volume slider
 - display a popup explaining the game rules before connecting to the lobby 
