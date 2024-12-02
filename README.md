@@ -19,13 +19,9 @@ wordcraft uses a webserver written in Go which serves templated HTML and JS. Web
 The UI is designed using [TailwindCSS](https://tailwindcss.com/) and [DaisyUI](https://daisyui.com/)
 
 ## Local development
-Building and running wordcraft locally requires a reasonably up-to-date version of `Go` and `npm`
+Building and running wordcraft locally requires Go >=1.23 and a reasonably up-to-date `npm`
 
-Assuming those are already installed and on the user's path, you can get started by installing `stringer`:
-
-`go install golang.org/x/tools/cmd/stringer@latest`
-
-Next, run Go's `generate` subcommand across the codebase to handle any code-generation needed before a build:
+To get started, run Go's `generate` subcommand across the codebase to handle any code-generation needed before a build:
 
 `go generate ./...`
 

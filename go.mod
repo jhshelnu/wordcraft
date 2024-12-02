@@ -1,6 +1,6 @@
 module github.com/jhshelnu/wordcraft
 
-go 1.23rc1
+go 1.23
 
 require (
 	github.com/gin-gonic/gin v1.10.0
