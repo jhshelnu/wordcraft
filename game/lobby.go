@@ -2,9 +2,6 @@ package game
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/jhshelnu/wordcraft/icons"
-	"github.com/jhshelnu/wordcraft/words"
 	"log"
 	"maps"
 	"os"
@@ -13,13 +10,16 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jhshelnu/wordcraft/icons"
+	"github.com/jhshelnu/wordcraft/words"
 )
 
 const (
 	MaxDisplayName = 15
 )
 
-//go:generate stringer -type gameStatus
+//go:generate go run golang.org/x/tools/cmd/stringer -type gameStatus
 type gameStatus int
 
 const (
@@ -29,7 +29,7 @@ const (
 )
 
 type Lobby struct {
-	Id uuid.UUID // the unique identifier for this lobby
+	Id string // the unique identifier for this lobby
 
 	logger *log.Logger
 
@@ -54,16 +54,14 @@ type Lobby struct {
 	lastClientId  int        // the id of the last client which connected (used to increment Client.id's as they join the lobby)
 	clientIdMutex sync.Mutex // enforces thread-safe access to the nextClientId
 
-	lobbyOver chan uuid.UUID // channel that lets this lobby notify the main thread that this lobby has completed. This allows the Lobby to get GC'ed
+	lobbyEndChan chan string // channel that lets this lobby notify the main thread that this lobby has completed. This allows the Lobby to get GC'ed
 }
 
-func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
-	Id := uuid.New()
-	logger := log.New(os.Stdout, fmt.Sprintf("Lobby [%s]: ", Id), log.Lshortfile|log.Lmsgprefix)
-
+func NewLobby(id string, lobbyEndChan chan string) *Lobby {
+	logger := log.New(os.Stdout, fmt.Sprintf("Lobby [%s]: ", id), log.Lshortfile|log.Lmsgprefix)
 	return &Lobby{
 		logger:    logger,
-		Id:        Id,
+		Id:        id,
 		join:      make(chan *Client),
 		leave:     make(chan *Client),
 		read:      make(chan Message),
@@ -71,7 +69,7 @@ func NewLobby(lobbyOver chan uuid.UUID) *Lobby {
 		status:    WaitingForPlayers,
 		clients:   make(map[int]*Client),
 		turnIndex: -1,
-		lobbyOver: lobbyOver,
+		lobbyEndChan: lobbyEndChan,
 	}
 }
 
@@ -469,5 +467,5 @@ func (lobby *Lobby) BroadcastMessage(message Message) {
 }
 
 func (lobby *Lobby) EndLobby() {
-	lobby.lobbyOver <- lobby.Id
+	lobby.lobbyEndChan <- lobby.Id
 }

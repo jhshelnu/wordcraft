@@ -11,7 +11,7 @@ import (
 
 const directory = "./data"
 
-//go:generate stringer -type ChallengeDifficulty -trimprefix Challenge
+//go:generate go run golang.org/x/tools/cmd/stringer -type ChallengeDifficulty -trimprefix Challenge
 type ChallengeDifficulty int
 
 const (
