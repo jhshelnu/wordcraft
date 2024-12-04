@@ -1,5 +1,6 @@
 <html lang="en">
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>wordcraft</title>
         <script src="/static/thirdparty/toastify-js.js"></script>
         <script src="/static/common.js"></script>
@@ -14,8 +15,8 @@
                 <span>{{.error}}</span>
             </div>
         {{end}}
-        <h1 class="text-center mt-20">Welcome to <span class="italic">wordcraft.</span></h1>
-        <article class="h4 text-center">
+        <h1 class="text-center mx-5 text-3xl md:text-6xl font-bold mt-10 md:mt-20">Welcome to <span class="italic">wordcraft.</span></h1>
+        <article class="text-center mx-8 my-4 text-xl md:text-2xl">
             wordcraft is a multiplayer game about coming up with words given a piece of a word, called a challenge.
             <br>
             E.g, if you are given a challenge of "<span class="font-bold">st</span>", you can answer with "<span class="font-bold">st</span>riped", "je<span class="font-bold">st</span>er", "fea<span class="font-bold">st</span>", etc.
@@ -26,7 +27,7 @@
             <br><br>
             But be quick&ndash; you only have so much time before you're out!
         </article>
-        <div class="mt-4 flex flex-row gap-6">
+        <div class="mt-4 flex flex-col md:flex-row gap-4 md:gap-5">
             <button id="create-lobby" class="btn btn-primary flex justify-center align-center">
                 <span class="material-symbols-outlined mt-1">stadia_controller</span>
                 <span class="text-lg">Create lobby</span>
