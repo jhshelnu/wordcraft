@@ -140,6 +140,7 @@ function onClientDetails(content) {
     let currentChallenge = content["CurrentChallenge"] // what the current challenge is, or "" if there isn't one
     let currentAnswerPrev = content["CurrentAnswerPrev"] // what the client whose turn it is currently has typed in
     let turnEnd = content["TurnEnd"] // milliseconds from unix epoch (UTC), or 0 if not applicable
+    let serverNow = content["Now"]   // current server time
     let winnersName = content["WinnersName"] // name of the client who won (at the moment of winning), or "" if not applicable
 
     // render the clients
@@ -161,7 +162,7 @@ function onClientDetails(content) {
             }
 
             if (currentChallenge && turnEnd) {
-                countDownTurn(currentChallenge, turnEnd)
+                countDownTurn(currentChallenge, turnEnd, serverNow)
             }
             break
         case OVER:
@@ -186,6 +187,8 @@ function onClientJoined(content) {
     } else {
         // if this is us, we do have some setup to do like registering event handlers
         renderNewClientCard(newClientId, displayName, iconName, isAlive, true)
+        document.querySelector(`[data-client-id="${clientsTurnId}"]`).scrollIntoView({ behavior: "instant", inline: "center" })
+
         myDisplayNameInput = document.getElementById("my-display-name")
 
         // on change, broadcast new name to the other clients
@@ -251,14 +254,14 @@ function renderNewClientCard(clientId, displayName, iconName, alive, isMe) {
     let clientsList = document.getElementById("clients-list")
     let template = document.createElement("template")
     template.innerHTML = `
-        <div data-client-id="${clientId}" class="card card-compact bg-base-100 w-52 shadow-2xl ${!alive ? "opacity-40" : ""}">
+        <div data-client-id="${clientId}" class="card card-compact bg-base-100 min-w-52 shadow-xl pt-2 ${!alive ? "opacity-40" : ""}" style="background-color: oklch(var(--n))">
             <img
                 class="mask max-w-36 mx-auto"
                 src="/static/icons/${iconName}"
                 alt="${iconName}" />
             <div class="card-body items-center">
                 ${isMe
-                    ? `<input id="my-display-name" class="input card-title text-center w-44" value="${displayName}">`
+                    ? `<input id="my-display-name" class="input card-title text-center w-44" style="background-color: oklch(var(--n))" value="${displayName}">`
                     : `<p data-display-name class="card-title">${displayName}</p>`
                 }
                 <div data-current-guess-pill class="rounded-full min-w-24 h-8 leading-8 bg-secondary text-center invisible">
@@ -279,9 +282,10 @@ function onClientsTurn(content) {
 
     let newClientsTurnId = content["ClientId"]
     let turnEnd = content["TurnEnd"] // milliseconds from unix epoch (UTC)
+    let serverNow = content["Now"]
     let currentChallenge = content["Challenge"]
 
-    countDownTurn(currentChallenge, turnEnd)
+    countDownTurn(currentChallenge, turnEnd, serverNow)
 
     if (clientsTurnId) {
         let previousTurnClient = document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`)
@@ -303,15 +307,19 @@ function onClientsTurn(content) {
         challengeInputSection.classList.add("hidden")
     }
 
+    document.querySelector(`[data-client-id="${newClientsTurnId}"]`).scrollIntoView({ behavior: "smooth", inline: "center" })
+
     clientsTurnId = newClientsTurnId
 }
 
-function countDownTurn(currentChallenge, turnEnd) {
+function countDownTurn(currentChallenge, turnEnd, serverNow) {
+    const offset = Date.now() - serverNow
+    console.log(`client is ${Math.abs(offset)}ms ${offset > 0 ? "ahead of" : "behind"} the server`)
     statusText.innerHTML = `
         <span class="mr-16">Challenge: ${currentChallenge}</span>
         Time left: 
         <span class="countdown">
-            <span id="seconds-left" style="--value: ${getSecondsUntil(turnEnd)}"></span>
+            <span id="seconds-left" style="--value: ${getSecondsUntil(turnEnd, offset)}"></span>
         </span>s
     `
     statusText.classList.remove("hidden")
@@ -319,7 +327,7 @@ function countDownTurn(currentChallenge, turnEnd) {
         // sometimes, depending on timing, this may fire one more time after the game is over
         // so, don't update the status text if it's already declared a winner
         if (gameStatus === IN_PROGRESS) {
-            let secondsLeft = getSecondsUntil(turnEnd)
+            let secondsLeft = getSecondsUntil(turnEnd, offset)
             document.getElementById("seconds-left").style.setProperty("--value", String(secondsLeft))
         } else {
             clearInterval(turnCountdownInterval)
@@ -328,9 +336,9 @@ function countDownTurn(currentChallenge, turnEnd) {
 }
 
 // returns the seconds until a given time (provided as milliseconds since the unix epoch in UTC), or 0 if the timestamp has already passed
-function getSecondsUntil(endMilli) {
-    const startMilli = new Date().getTime()
-    let secondsUntil = (endMilli - startMilli) / 1_000
+function getSecondsUntil(endMilli, offset) {
+    const startMilli = Date.now()
+    let secondsUntil = (endMilli - startMilli + offset) / 1_000
     return Math.max(Math.round(secondsUntil), 0)
 }
 

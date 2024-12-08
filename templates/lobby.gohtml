@@ -17,35 +17,39 @@
         <link rel="stylesheet" href="/static/main.css">
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     </head>
-    <body class="flex flex-col items-center">
-        <button class="btn btn-outline btn-error absolute top-3 left-3" onclick="leaveLobby()">
-            <span class="material-symbols-outlined -ml-3 -mr-1 mt-0.5">chevron_left</span>
-            Leave lobby
-        </button>
-        <h2 id="status-text" class="h2 w-full text-center hidden"></h2>
-        <div id="clients-list" class="flex flex-row gap-4 mt-10"></div>
-
-        <div id="challenge-input-section" class="mt-14 hidden">
-            <label for="answer-input"></label>
-            <input id="answer-input" type="text" class="input input-accent w-50" autocapitalize="none"/>
-        </div>
-
-        <div class="flex flex-row gap-6 mt-14">
-            <button id="start-game-button" class="btn btn-accent min-w-36 text-lg hidden" disabled>Waiting for players...</button>
-            <button id="restart-game-button" class="btn btn-accent min-w-36 text-lg hidden" disabled>
-                <span class="material-symbols-outlined -ml-2 mr-0.5 mt-1">refresh</span>
-                Restart Game
-            </button>
-            <button id="invite-button" class="btn btn-primary hidden">
-                <span class="material-symbols-outlined">content_copy</span>
-                <span id="invite-button-text">Copy invite link</span>
+    <body>
+        <div class="m-3 md:m-0">
+            <button class="btn btn-outline btn-error md:absolute md:top-3 md:left-3" onclick="leaveLobby()">
+                <span class="material-symbols-outlined -ml-3 -mr-1 mt-0.5">chevron_left</span>
+                Leave lobby
             </button>
         </div>
-        <div id="suggestions-table" class="hidden card card-compact bg-base-100 w-52 shadow-2xl mt-10 pb-3">
-            <table class="table table-lg">
-                <thead><tr><th>You could have answered with</th></tr></thead>
-                <tbody id="suggestions-body"></tbody>
-            </table>
+        <div class="flex flex-col items-center">
+            <h2 id="status-text" class="font-bold text-4xl w-full text-center hidden"></h2>
+            <div id="clients-list" class="flex flex-row gap-5 px-6 pb-8 mt-10 overflow-x-scroll no-scrollbar max-w-full"></div>
+
+            <div id="challenge-input-section" class="mt-14 hidden">
+                <label for="answer-input"></label>
+                <input id="answer-input" type="text" class="input input-accent w-50" autocapitalize="none"/>
+            </div>
+
+            <div class="flex flex-col mt-14 md:flex-row gap-4 md:gap-5">
+                <button id="start-game-button" class="btn btn-accent text-lg hidden" disabled>Waiting for players...</button>
+                <button id="restart-game-button" class="btn btn-accent text-lg hidden" disabled>
+                    <span class="material-symbols-outlined -ml-2 mr-0.5 mt-1">refresh</span>
+                    Restart Game
+                </button>
+                <button id="invite-button" class="btn btn-primary hidden">
+                    <span class="material-symbols-outlined">content_copy</span>
+                    <span id="invite-button-text">Copy invite link</span>
+                </button>
+            </div>
+            <div id="suggestions-table" class="hidden card card-compact bg-base-100 w-52 shadow-2xl mt-10 pb-3">
+                <table class="table table-lg">
+                    <thead><tr><th>You could have answered with</th></tr></thead>
+                    <tbody id="suggestions-body"></tbody>
+                </table>
+            </div>
         </div>
     </body>
 </html>

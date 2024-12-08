@@ -60,15 +60,15 @@ type Lobby struct {
 func NewLobby(id string, lobbyEndChan chan string) *Lobby {
 	logger := log.New(os.Stdout, fmt.Sprintf("Lobby [%s]: ", id), log.Lshortfile|log.Lmsgprefix)
 	return &Lobby{
-		logger:    logger,
-		Id:        id,
-		join:      make(chan *Client),
-		leave:     make(chan *Client),
-		read:      make(chan Message),
-		iconNames: icons.GetShuffledIconNames(),
-		status:    WaitingForPlayers,
-		clients:   make(map[int]*Client),
-		turnIndex: -1,
+		logger:       logger,
+		Id:           id,
+		join:         make(chan *Client),
+		leave:        make(chan *Client),
+		read:         make(chan Message),
+		iconNames:    icons.GetShuffledIconNames(),
+		status:       WaitingForPlayers,
+		clients:      make(map[int]*Client),
+		turnIndex:    -1,
 		lobbyEndChan: lobbyEndChan,
 	}
 }
@@ -389,6 +389,7 @@ func (lobby *Lobby) changeTurn(removeCurrentClient bool) {
 			ClientId:  lobby.aliveClients[lobby.turnIndex].id,
 			Challenge: lobby.currentChallenge,
 			TurnEnd:   lobby.currentTurnEnd,
+			Now:       time.Now().UnixMilli(),
 		},
 	})
 }
@@ -456,6 +457,7 @@ func (lobby *Lobby) BuildClientDetails(joiningClientId int) ClientDetailsContent
 		CurrentChallenge:  lobby.currentChallenge,
 		CurrentAnswerPrev: lobby.currentAnswerPrev,
 		TurnEnd:           lobby.currentTurnEnd,
+		Now:               time.Now().UnixMilli(),
 		WinnersName:       lobby.winnersName,
 	}
 }

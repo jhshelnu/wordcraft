@@ -30,6 +30,7 @@ type ClientsTurnContent struct {
 	ClientId  int    // whose turn it is
 	Challenge string // what the challenge string is, e.g. "atr"
 	TurnEnd   int64  // milliseconds from unix epoch (UTC)
+	Now       int64  // current time according to the server
 }
 
 type TurnExpiredContent struct {
@@ -47,6 +48,7 @@ type ClientDetailsContent struct {
 	CurrentChallenge  string          // what the current challenge is, or "" if there isn't one
 	CurrentAnswerPrev string          // what the client whose turn it is currently has typed in
 	TurnEnd           int64           // milliseconds from unix epoch (UTC), or 0 if not applicable
+	Now               int64           // current server time
 	WinnersName       string          // name of the client who won (at the moment of winning), or "" if not applicable
 }
 
