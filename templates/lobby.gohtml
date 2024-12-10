@@ -25,15 +25,16 @@
             </button>
         </div>
         <div class="flex flex-col items-center">
-            <h2 id="status-text" class="font-bold text-4xl w-full text-center hidden"></h2>
-            <div id="clients-list" class="flex flex-row gap-5 px-6 pb-8 mt-10 overflow-x-scroll no-scrollbar max-w-full"></div>
+            <h2 id="status-text" class="font-bold text-4xl w-full mt-6 md:mt-10 text-center hidden"></h2>
 
-            <div id="challenge-input-section" class="mt-14 hidden">
+            <div id="challenge-input-section" class="mt-14 hidden md:order-3">
                 <label for="answer-input"></label>
-                <input id="answer-input" type="text" class="input input-accent w-50" autocapitalize="none"/>
+                <input id="answer-input" type="text" class="input input-accent input-lg md:input-md" autocapitalize="none" enterkeyhint="send"/>
             </div>
 
-            <div class="flex flex-col mt-14 md:flex-row gap-4 md:gap-5">
+            <div id="clients-list" class="flex flex-row gap-5 px-6 pb-8 mt-10 overflow-x-scroll no-scrollbar max-w-full"></div>
+
+            <div class="flex flex-col mt-14 md:flex-row gap-2 md:gap-3">
                 <button id="start-game-button" class="btn btn-accent text-lg hidden" disabled>Waiting for players...</button>
                 <button id="restart-game-button" class="btn btn-accent text-lg hidden" disabled>
                     <span class="material-symbols-outlined -ml-2 mr-0.5 mt-1">refresh</span>
@@ -44,7 +45,7 @@
                     <span id="invite-button-text">Copy invite link</span>
                 </button>
             </div>
-            <div id="suggestions-table" class="hidden card card-compact bg-base-100 w-52 shadow-2xl mt-10 pb-3">
+            <div id="suggestions-table" class="hidden card card-compact bg-base-100 w-52 shadow-2xl mt-5 mb-10" style="background-color: oklch(var(--n))">
                 <table class="table table-lg">
                     <thead><tr><th>You could have answered with</th></tr></thead>
                     <tbody id="suggestions-body"></tbody>

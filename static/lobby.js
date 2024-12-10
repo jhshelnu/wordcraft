@@ -123,8 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
     })
 
     answerInput.addEventListener("keyup", e => {
+        e.preventDefault()
         let input = answerInput.value.toLowerCase()
-        if (e.key === "Enter" && input) {
+        if (input && e.key === "Enter") {
             ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
         }
     })
@@ -187,7 +188,10 @@ function onClientJoined(content) {
     } else {
         // if this is us, we do have some setup to do like registering event handlers
         renderNewClientCard(newClientId, displayName, iconName, isAlive, true)
-        document.querySelector(`[data-client-id="${clientsTurnId}"]`).scrollIntoView({ behavior: "instant", inline: "center" })
+
+        if (clientsTurnId) {
+            document.querySelector(`[data-client-id="${clientsTurnId}"]`).scrollIntoView({ behavior: "instant", inline: "center" })
+        }
 
         myDisplayNameInput = document.getElementById("my-display-name")
 
@@ -316,7 +320,7 @@ function countDownTurn(currentChallenge, turnEnd, serverNow) {
     const offset = Date.now() - serverNow
     console.log(`client is ${Math.abs(offset)}ms ${offset > 0 ? "ahead of" : "behind"} the server`)
     statusText.innerHTML = `
-        <span class="mr-16">Challenge: ${currentChallenge}</span>
+        <span class="md:mr-16">Challenge: ${currentChallenge}</span><br class="md:hidden">
         Time left: 
         <span class="countdown">
             <span id="seconds-left" style="--value: ${getSecondsUntil(turnEnd, offset)}"></span>
