@@ -36,7 +36,7 @@ func generateNewId() string {
 	attempts := 0
 	for {
 		// start with 2 words, every 1 thousand attempts add another word
-		words, err := diceware.GenerateWithWordList(2 + (attempts / 1_000), diceware.WordListEffSmall())
+		words, err := diceware.GenerateWithWordList(2+(attempts/1_000), diceware.WordListEffSmall())
 		if err != nil {
 			panic(err)
 		}
@@ -88,7 +88,7 @@ func openLobby(c *gin.Context) {
 func joinLobby(c *gin.Context) {
 	lobbyId := c.Param("lobbyId")
 
-	lobby, exists := lobbies.Get(lobbyId);
+	lobby, exists := lobbies.Get(lobbyId)
 	if !exists {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Lobby not found"})
 		return

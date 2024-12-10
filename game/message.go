@@ -5,19 +5,19 @@ type messageType string
 //goland:noinspection GoNameStartsWithPackageName
 const (
 	StartGame      messageType = "start_game"      // the game has started
-	ClientDetails              = "client_details"  // sent to a newly connected client, indicating their id, the status of the game, etc
-	ClientJoined               = "client_joined"   // a new client has joined
-	ClientLeft                 = "client_left"     // a client has left
-	SubmitAnswer               = "submit_answer"   // when the client submits an answer
-	AnswerPreview              = "answer_preview"  // preview of the current answer (not submitted) so other clients can see
-	AnswerAccepted             = "answer_accepted" // the answer is accepted
-	AnswerRejected             = "answer_rejected" // the answer is not accepted
-	TurnExpired                = "turn_expired"    // client has run out of time
-	ClientsTurn                = "clients_turn"    // it's a new clients turn
-	GameOver                   = "game_over"       // the game is over
-	RestartGame                = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
-	NameChange                 = "name_change"     // used by clients to indicate they want a new display name
-	Shutdown                   = "shutdown"        // tells the clients the server is being shutdown now
+	ClientDetails  messageType = "client_details"  // sent to a newly connected client, indicating their id, the status of the game, etc
+	ClientJoined   messageType = "client_joined"   // a new client has joined
+	ClientLeft     messageType = "client_left"     // a client has left
+	SubmitAnswer   messageType = "submit_answer"   // when the client submits an answer
+	AnswerPreview  messageType = "answer_preview"  // preview of the current answer (not submitted) so other clients can see
+	AnswerAccepted messageType = "answer_accepted" // the answer is accepted
+	AnswerRejected messageType = "answer_rejected" // the answer is not accepted
+	TurnExpired    messageType = "turn_expired"    // client has run out of time
+	ClientsTurn    messageType = "clients_turn"    // it's a new clients turn
+	GameOver       messageType = "game_over"       // the game is over
+	RestartGame    messageType = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
+	NameChange     messageType = "name_change"     // used by clients to indicate they want a new display name
+	Shutdown       messageType = "shutdown"        // tells the clients the server is being shutdown now
 )
 
 type Message struct {
