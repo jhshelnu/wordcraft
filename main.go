@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -87,6 +88,7 @@ func openLobby(c *gin.Context) {
 // this is what actually causes the user to "join" the lobby and be able to play
 func joinLobby(c *gin.Context) {
 	lobbyId := c.Param("lobbyId")
+	reconnectToken := c.Query("reconnectToken")
 
 	lobby, exists := lobbies.Get(lobbyId)
 	if !exists {
@@ -103,10 +105,10 @@ func joinLobby(c *gin.Context) {
 		return
 	}
 
-	err = game.JoinClientToLobby(conn, lobby)
+	err = game.JoinConnToLobby(conn, lobby, reconnectToken)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to join lobby. The connection was not properly added to the lobby."})
-		return
+		fmt.Printf("Client failed to join lobby: %v\n", err)
+		_ = conn.Close()
 	}
 }
 

@@ -33,6 +33,7 @@ let clientsTurnId         // the id of the client whose turn it is
 let challengeInputSection // the part of the page to get the user's input (only shown during their turn)
 let answerInput           // the input element which holds what the user has typed so far
 let statusText            // large text at the top of the screen displaying the current status (current challenge, who won, etc.)
+let clientsList           // the section showing all of the client cards
 let turnCountdownInterval // the interval where we count down how many seconds the user has left
 let suggestionsTable      // the <table> holding suggestions
 let suggestionsBody       // the <tbody> holding the specific suggestions
@@ -45,7 +46,8 @@ let clientEliminated       // what plays when time runs out for a client
 document.addEventListener("DOMContentLoaded", () => {
     // establish websocket connection right away
     const protocol = isProd ? "wss" : "ws"
-    ws = new WebSocket(`${protocol}://${location.host}/ws/${lobbyId}`)
+    const reconnectToken = localStorage.getItem("reconnectToken")
+    ws = new WebSocket(`${protocol}://${location.host}/ws/${lobbyId}${reconnectToken ? `?reconnectToken=${reconnectToken}` : ""}`)
     startGameButton = document.getElementById("start-game-button")
     restartGameButton = document.getElementById("restart-game-button")
     inviteButton = document.getElementById("invite-button")
@@ -53,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
     challengeInputSection = document.getElementById("challenge-input-section")
     answerInput = document.getElementById("answer-input")
     statusText = document.getElementById("status-text")
+    clientsList = document.getElementById("clients-list")
     suggestionsTable = document.getElementById("suggestions-table")
     suggestionsBody = document.getElementById("suggestions-body")
 
@@ -117,6 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    ws.onclose = () => location.href = "/"
+
     answerInput.addEventListener("input", () => {
         let currentInput = answerInput.value.toLowerCase()
         ws.send(JSON.stringify({ Type: ANSWER_PREVIEW, Content: currentInput }))
@@ -124,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     answerInput.addEventListener("keyup", e => {
         e.preventDefault()
-        let input = answerInput.value.toLowerCase()
+        let input = answerInput.value.toLowerCase().trim()
         if (input && e.key === "Enter") {
             ws.send(JSON.stringify({ Type: SUBMIT_ANSWER, Content: input }))
         }
@@ -135,9 +140,10 @@ document.addEventListener("DOMContentLoaded", () => {
 // its job is to catch the client up on details-- what their id is, the current state of the game, etc
 function onClientDetails(content) {
     myClientId = content["ClientId"] // this is our assigned clientId for the rest of the lobby
+    let reconnectToken = content["ReconnectToken"] // a special token that can be used to reconnect to the game
     gameStatus = content["Status"]   // the status of the game (need to know if it's started yet or not)
     let clients = content["Clients"] // all the clients that are already in the game
-    let currentTurnId = content["CurrentTurnId"] // the id of the client whose turn it is (or 0 if not applicable)
+    clientsTurnId = content["CurrentTurnId"] // the id of the client whose turn it is (or 0 if not applicable)
     let currentChallenge = content["CurrentChallenge"] // what the current challenge is, or "" if there isn't one
     let currentAnswerPrev = content["CurrentAnswerPrev"] // what the client whose turn it is currently has typed in
     let turnEnd = content["TurnEnd"] // milliseconds from unix epoch (UTC), or 0 if not applicable
@@ -145,9 +151,27 @@ function onClientDetails(content) {
     let winnersName = content["WinnersName"] // name of the client who won (at the moment of winning), or "" if not applicable
 
     // render the clients
+    clientsList.replaceChildren() // clears all existing client cards in case of a reconnection
     clients.forEach(client => {
-        renderNewClientCard(client["Id"], client["DisplayName"], client["IconName"], client["Alive"], false)
+        renderNewClientCard(client["Id"], client["DisplayName"], client["IconName"], client["Alive"], client["Id"] === myClientId)
     })
+
+    if (clientsList.children.length >= 2) {
+        startGameButton.textContent = "Start game!"
+        startGameButton.removeAttribute("disabled")
+        restartGameButton.removeAttribute("disabled")
+    }
+
+    // register all listeners on the player's own client card
+    registerClientCardEventListeners()
+
+    // on first visit to this lobby, pre-select the name change input for convenience
+    if (localStorage.getItem("reconnectToken") !== reconnectToken) {
+        myDisplayNameInput.select()
+    }
+
+    // then save our reconnect token in case of severed connection or browser refresh
+    localStorage.setItem("reconnectToken", reconnectToken)
 
     // then render the other buttons, etc. depending on the game state
     switch (gameStatus) {
@@ -156,24 +180,57 @@ function onClientDetails(content) {
             inviteButton.classList.remove("hidden")
             break
         case IN_PROGRESS:
-            if (currentTurnId) {
-                document.querySelector(`[data-client-id="${currentTurnId}"] [data-current-guess]`).textContent = currentAnswerPrev
-                document.querySelector(`[data-client-id="${currentTurnId}"] [data-current-guess-pill]`).classList.remove("invisible")
-                clientsTurnId = currentTurnId
-            }
+            document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess]`).textContent = currentAnswerPrev
+            document.querySelector(`[data-client-id="${clientsTurnId}"] [data-current-guess-pill]`).classList.remove("invisible")
+            countDownTurn(currentChallenge, turnEnd, serverNow)
 
-            if (currentChallenge && turnEnd) {
-                countDownTurn(currentChallenge, turnEnd, serverNow)
+            if (myClientId === clientsTurnId) {
+                answerInput.value = currentAnswerPrev
+                challengeInputSection.classList.remove("hidden")
+                answerInput.focus()
             }
             break
         case OVER:
             statusText.textContent = `🎉 ${winnersName} has won! 🎉`
             statusText.classList.remove("hidden")
-
             restartGameButton.classList.remove("hidden")
             inviteButton.classList.remove("hidden")
             break
     }
+}
+
+function registerClientCardEventListeners() {
+    if (clientsTurnId) {
+        document.querySelector(`[data-client-id="${clientsTurnId}"]`).scrollIntoView({ behavior: "instant", inline: "center" })
+    }
+
+    myDisplayNameInput = document.getElementById("my-display-name")
+
+    // on change, broadcast new name to the other clients
+    myDisplayNameInput.addEventListener("input", () => {
+        let newDisplayName = myDisplayNameInput.value
+        ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: newDisplayName }))
+    })
+
+    // on focus, preselect the text for convenience
+    myDisplayNameInput.addEventListener("focus", () => {
+        myDisplayNameInput.select()
+    })
+
+    // on enter hit, remove focus from input for convenience
+    myDisplayNameInput.addEventListener("keyup", e => {
+        if (e.key === "Enter") {
+            myDisplayNameInput.blur() // unfocus the element on enter
+        }
+    })
+
+    // on unfocus, if the name is blank, reset it to the default name
+    myDisplayNameInput.addEventListener("blur", () => {
+        if (!myDisplayNameInput.value) {
+            myDisplayNameInput.value = `Player ${myClientId}`
+            ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: myDisplayNameInput.value }))
+        }
+    })
 }
 
 function onClientJoined(content) {
@@ -182,48 +239,7 @@ function onClientJoined(content) {
     let iconName    = content["IconName"]
     let isAlive     = content["Alive"]
 
-    if (newClientId !== myClientId) {
-        // if the new client is not us, this is easy
-        renderNewClientCard(newClientId, displayName, iconName, isAlive, false)
-    } else {
-        // if this is us, we do have some setup to do like registering event handlers
-        renderNewClientCard(newClientId, displayName, iconName, isAlive, true)
-
-        if (clientsTurnId) {
-            document.querySelector(`[data-client-id="${clientsTurnId}"]`).scrollIntoView({ behavior: "instant", inline: "center" })
-        }
-
-        myDisplayNameInput = document.getElementById("my-display-name")
-
-        // on change, broadcast new name to the other clients
-        myDisplayNameInput.addEventListener("input", () => {
-            let newDisplayName = myDisplayNameInput.value
-            ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: newDisplayName }))
-        })
-
-        // on focus, preselect the text for convenience
-        myDisplayNameInput.addEventListener("focus", () => {
-            myDisplayNameInput.select()
-        })
-
-        // on enter hit, remove focus from input for convenience
-        myDisplayNameInput.addEventListener("keyup", e => {
-            if (e.key === "Enter") {
-                myDisplayNameInput.blur() // unfocus the element on enter
-            }
-        })
-
-        // on unfocus, if the name is blank, reset it to the default name
-        myDisplayNameInput.addEventListener("blur", () => {
-            if (!myDisplayNameInput.value) {
-                myDisplayNameInput.value = `Player ${myClientId}`
-                ws.send(JSON.stringify({ Type: NAME_CHANGE, Content: myDisplayNameInput.value }))
-            }
-        })
-
-        // once joined, pre-select the text for convenience
-        myDisplayNameInput.select()
-    }
+    renderNewClientCard(newClientId, displayName, iconName, isAlive, false)
 
     clientJoinedAudio.volume = VOLUME
     clientJoinedAudio.play()

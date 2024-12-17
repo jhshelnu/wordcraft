@@ -1,29 +1,36 @@
 package game
 
+import "fmt"
+
 type messageType string
 
 //goland:noinspection GoNameStartsWithPackageName
 const (
-	StartGame      messageType = "start_game"      // the game has started
-	ClientDetails  messageType = "client_details"  // sent to a newly connected client, indicating their id, the status of the game, etc
-	ClientJoined   messageType = "client_joined"   // a new client has joined
-	ClientLeft     messageType = "client_left"     // a client has left
-	SubmitAnswer   messageType = "submit_answer"   // when the client submits an answer
-	AnswerPreview  messageType = "answer_preview"  // preview of the current answer (not submitted) so other clients can see
-	AnswerAccepted messageType = "answer_accepted" // the answer is accepted
-	AnswerRejected messageType = "answer_rejected" // the answer is not accepted
-	TurnExpired    messageType = "turn_expired"    // client has run out of time
-	ClientsTurn    messageType = "clients_turn"    // it's a new clients turn
-	GameOver       messageType = "game_over"       // the game is over
-	RestartGame    messageType = "restart_game"    // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
-	NameChange     messageType = "name_change"     // used by clients to indicate they want a new display name
-	Shutdown       messageType = "shutdown"        // tells the clients the server is being shutdown now
+	StartGame        messageType = "start_game"         // the game has started
+	ClientDetails    messageType = "client_details"     // sent to a newly connected client, indicating their id, the status of the game, etc
+	ClientDetailsReq messageType = "client_details_req" // sent from a client that has reconnected asking the server for a full update
+	ClientJoined     messageType = "client_joined"      // a new client has joined
+	ClientLeft       messageType = "client_left"        // a client has left
+	SubmitAnswer     messageType = "submit_answer"      // when the client submits an answer
+	AnswerPreview    messageType = "answer_preview"     // preview of the current answer (not submitted) so other clients can see
+	AnswerAccepted   messageType = "answer_accepted"    // the answer is accepted
+	AnswerRejected   messageType = "answer_rejected"    // the answer is not accepted
+	TurnExpired      messageType = "turn_expired"       // client has run out of time
+	ClientsTurn      messageType = "clients_turn"       // it's a new clients turn
+	GameOver         messageType = "game_over"          // the game is over
+	RestartGame      messageType = "restart_game"       // sent from a client to initiate a game restart. sever then rebroadcasts to all clients to confirm
+	NameChange       messageType = "name_change"        // used by clients to indicate they want a new display name
+	Shutdown         messageType = "shutdown"           // tells the clients the server is being shutdown now
 )
 
 type Message struct {
 	From    int         // id of the Client in the lobby
 	Type    messageType // content of the message
 	Content any         // any additional info, e.g. which client joined, what their answer is, etc
+}
+
+func (m Message) String() string {
+	return fmt.Sprintf("Message[Type='%s']", m.Type)
 }
 
 type ClientsTurnContent struct {
@@ -42,6 +49,7 @@ type TurnExpiredContent struct {
 // it's job is to catch the client up on details-- what their id is, the current state of the game, etc
 type ClientDetailsContent struct {
 	ClientId          int             // the id assigned to this client
+	ReconnectToken    string          // a token used to reconnect to the lobby as an existing player (during browser refresh/temp connection loss)
 	Status            gameStatus      // the status of the game (if a client connects mid-game or when the game is over, this is how they'll know)
 	Clients           []ClientContent // details of the existing clients in the lobby
 	CurrentTurnId     int             // the id of the client whose turn it is (or 0 if not applicable)
